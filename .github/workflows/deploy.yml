@@ -2,7 +2,9 @@ name: Deploy to Salesforce
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -14,14 +16,28 @@ jobs:
       - name: Install Salesforce CLI
         run: npm install --global @salesforce/cli
 
-      - name: Authenticate to Salesforce
+      - name: Write JWT key to file
         run: |
-          echo "${{ secrets.SFDX_AUTH_URL }}" > ./SFDX_AUTH_URL.txt
-          sf org login sfdx-url --sfdx-url-file ./SFDX_AUTH_URL.txt --alias deployOrg --set-default
+          echo "${{ secrets.SF_JWT_KEY }}" | base64 --decode > server.key
+          echo "--- key file line count ---"
+          wc -l server.key
 
-      - name: Deploy metadata
-        run: sf project deploy start --target-org deployOrg --ignore-conflicts
+      - name: Authenticate to Salesforce via JWT
+        run: |
+          sf org login jwt \
+            --client-id ${{ secrets.SF_CONSUMER_KEY }} \
+            --jwt-key-file server.key \
+            --username ${{ secrets.SF_USERNAME }} \
+            --instance-url ${{ secrets.SF_INSTANCE_URL }} \
+            --alias riskorg \
+            --set-default
+
+      - name: Deploy source to org
+        run: sf project deploy start --target-org riskorg --ignore-conflicts
 
       - name: Run Apex tests
-        run: sf apex run test --target-org deployOrg --code-coverage --result-format human --wait 10
-        continue-on-error: true
+        run: sf apex run test --target-org riskorg --test-level RunLocalTests --result-format human --wait 20
+
+      - name: Clean up key file
+        if: always()
+        run: rm -f server.key
