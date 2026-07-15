@@ -1,6 +1,11 @@
 public with sharing class RiskCaseService {
     private static final Set<String> CLOSED_STATUSES = new Set<String>{ 'Confirmed Fraud', 'False Positive' };
 
+    // Matches the locked-in Composite Risk Score threshold from the Bancassurance_Risk_Score
+    // Calculated Insight (see Project Plan, Phase 5): a customer needs to have triggered at
+    // least one of the four risk-flag rules to warrant a Risk_Case__c.
+    private static final Decimal RISK_SCORE_THRESHOLD = 1;
+
     public class RiskSignalRequest {
         @InvocableVariable(required=true label='Customer Key')
         public String customerKey;
@@ -22,7 +27,7 @@ public with sharing class RiskCaseService {
 
     @InvocableMethod(
         label='Create or Update Risk Case'
-        description='Upserts an open Risk_Case__c from a Data Cloud composite risk signal and publishes a Risk_Signal_Change__e event.'
+        description='Upserts an open Risk_Case__c from a Data Cloud composite risk signal (score >= threshold only) and publishes a Risk_Signal_Change__e event.'
         category='Risk'
     )
     public static List<RiskSignalResult> createOrUpdateRiskCase(List<RiskSignalRequest> requests) {
@@ -31,14 +36,24 @@ public with sharing class RiskCaseService {
             return results;
         }
 
-        Set<String> customerKeys = new Set<String>();
+        // Filter to qualifying requests up front. The Data Cloud-Triggered Flow entry
+        // conditions cannot filter directly on the Calculated Insight's custom output field
+        // (composite_risk_score__c), so this method is the actual threshold enforcement point.
+        List<RiskSignalRequest> qualifying = new List<RiskSignalRequest>();
         for (RiskSignalRequest req : requests) {
-            if (String.isNotBlank(req.customerKey)) {
-                customerKeys.add(req.customerKey);
+            if (String.isNotBlank(req.customerKey)
+                && req.riskScore != null
+                && req.riskScore >= RISK_SCORE_THRESHOLD) {
+                qualifying.add(req);
             }
         }
-        if (customerKeys.isEmpty()) {
+        if (qualifying.isEmpty()) {
             return results;
+        }
+
+        Set<String> customerKeys = new Set<String>();
+        for (RiskSignalRequest req : qualifying) {
+            customerKeys.add(req.customerKey);
         }
 
         Map<String, Risk_Case__c> openCaseByCustomerKey = new Map<String, Risk_Case__c>();
@@ -53,6 +68,10 @@ public with sharing class RiskCaseService {
             }
         }
 
+        // NOTE: this class does not currently enforce field-level security (FLS) or object
+        // CRUD permissions beyond the sharing rules implied by `with sharing`. For a
+        // production deployment, wrap the DML below with Security.stripInaccessible() or
+        // annotate the SOQL with WITH SECURITY_ENFORCED.
         Map<String, Id> householdByCustomerKey = new Map<String, Id>();
         for (Financial_Account__c acct : [
             SELECT Customer_Key__c, Household__c
@@ -67,11 +86,7 @@ public with sharing class RiskCaseService {
         List<Risk_Case__c> toUpsert = new List<Risk_Case__c>();
         List<Boolean> isNewByIndex = new List<Boolean>();
 
-        for (RiskSignalRequest req : requests) {
-            if (String.isBlank(req.customerKey) || req.riskScore == null) {
-                continue;
-            }
-
+        for (RiskSignalRequest req : qualifying) {
             Risk_Case__c riskCase = openCaseByCustomerKey.get(req.customerKey);
             Boolean isNew = riskCase == null;
             if (isNew) {
@@ -116,7 +131,17 @@ public with sharing class RiskCaseService {
             results.add(result);
         }
 
-        EventBus.publish(events);
+        List<Database.SaveResult> publishResults = EventBus.publish(events);
+        for (Database.SaveResult sr : publishResults) {
+            if (!sr.isSuccess()) {
+                for (Database.Error err : sr.getErrors()) {
+                    System.debug(
+                        LoggingLevel.ERROR,
+                        'Risk_Signal_Change__e publish failed: ' + err.getStatusCode() + ' - ' + err.getMessage()
+                    );
+                }
+            }
+        }
 
         return results;
     }

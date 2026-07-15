@@ -130,6 +130,26 @@ private class RiskCaseServiceTest {
     }
 
     @isTest
+    static void testBelowThresholdScoreIsSkipped_NoRiskCaseCreated() {
+        // Explicit coverage for the RISK_SCORE_THRESHOLD guard added to RiskCaseService.
+        // A score below the locked-in threshold (1) should be silently filtered out,
+        // matching the actual verified Bancassurance_Risk_Score composite score behavior
+        // (customers scoring 0 across all four rules should never produce a Risk_Case__c).
+        RiskCaseService.RiskSignalRequest belowThreshold = new RiskCaseService.RiskSignalRequest();
+        belowThreshold.customerKey = 'CUST-0007';
+        belowThreshold.riskScore = 0.5;
+
+        Test.startTest();
+        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+            new List<RiskCaseService.RiskSignalRequest>{ belowThreshold }
+        );
+        Test.stopTest();
+
+        System.assertEquals(0, results.size(), 'A below-threshold score should produce no result and no Risk_Case__c');
+        System.assertEquals(0, [SELECT COUNT() FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-0007']);
+    }
+
+    @isTest
     static void testEmptyOrNullRequestListReturnsEmptyResults() {
         Test.startTest();
         List<RiskCaseService.RiskSignalResult> emptyListResults = RiskCaseService.createOrUpdateRiskCase(
@@ -148,7 +168,8 @@ private class RiskCaseServiceTest {
         for (Integer i = 0; i < 200; i++) {
             RiskCaseService.RiskSignalRequest req = new RiskCaseService.RiskSignalRequest();
             req.customerKey = 'BULK-CUST-' + i;
-            req.riskScore = Math.mod(i, 10);
+            // 1-10, always at or above RISK_SCORE_THRESHOLD so all 200 requests qualify.
+            req.riskScore = Math.mod(i, 10) + 1;
             requests.add(req);
         }
 
