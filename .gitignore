@@ -46,3 +46,11 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Certificates and private keys - never commit these
+*.key
+*.pem
+*.crt
+*.csr
+server_b64*.txt
+*_b64.txt
