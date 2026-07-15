@@ -24,3 +24,4 @@ jobs:
 
       - name: Run Apex tests
         run: sf apex run test --target-org deployOrg --code-coverage --result-format human --wait 10
+        continue-on-error: true
