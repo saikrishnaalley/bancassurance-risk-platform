@@ -3,11 +3,11 @@
     <dataKitSource>LOCAL</dataKitSource>
     <dataKitType>SANDBOX</dataKitType>
     <dataSpaceDefinitionDevName>default</dataSpaceDefinitionDevName>
-    <deploymentOrder>{&quot;isAutoSequence&quot;:true,&quot;sequence&quot;:[{&quot;devName&quot;:&quot;UploadedFiles&quot;,&quot;type&quot;:&quot;MktDataConnection&quot;,&quot;id&quot;:&quot;9cgfj000001AWKbAAO&quot;},{&quot;devName&quot;:&quot;Risk_Source_Data_Streams&quot;,&quot;type&quot;:&quot;DataStream&quot;},{&quot;devName&quot;:&quot;Bancassurance_Risk_Score&quot;,&quot;type&quot;:&quot;DataCalcInsightTemplate&quot;,&quot;id&quot;:&quot;0kVfj000000VllpEAC&quot;}]}</deploymentOrder>
+    <deploymentOrder>{&quot;isAutoSequence&quot;:true,&quot;sequence&quot;:[{&quot;devName&quot;:&quot;UploadedFiles&quot;,&quot;type&quot;:&quot;MktDataConnection&quot;,&quot;id&quot;:&quot;9cgfj000001AWKbAAO&quot;},{&quot;devName&quot;:&quot;Risk_Source_Data_Streams&quot;,&quot;type&quot;:&quot;DataStream&quot;},{&quot;devName&quot;:&quot;Individual_RISK&quot;,&quot;type&quot;:&quot;IdentityResolution&quot;,&quot;id&quot;:&quot;1irfj000000gf0QAAQ&quot;},{&quot;devName&quot;:&quot;Bancassurance_Risk_Score&quot;,&quot;type&quot;:&quot;DataCalcInsightTemplate&quot;,&quot;id&quot;:&quot;0kVfj000000VllpEAC&quot;}]}</deploymentOrder>
     <developerName>Bancassurance_Risk_Pipeline</developerName>
     <isDeployed>false</isDeployed>
     <isEnabled>false</isEnabled>
     <masterLabel>Bancassurance Risk Pipeline</masterLabel>
     <useDeterministicNaming>false</useDeterministicNaming>
-    <versionNumber>3.0</versionNumber>
+    <versionNumber>4.0</versionNumber>
 </DataPackageKitDefinition>
