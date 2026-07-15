@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataKitObjectDependency xmlns="http://soap.sforce.com/2006/04/metadata">
+    <dataPackageKitDef>Bancassurance_Risk_Pipeline</dataPackageKitDef>
+    <developerName>UploadedFiles1</developerName>
+    <masterLabel>UploadedFiles</masterLabel>
+    <sourceObject>banking_transactions_preparedcsv_1784087945219</sourceObject>
+    <sourceObjectType>DataStreamTemplate</sourceObjectType>
+    <targetObject>UploadedFiles</targetObject>
+</DataKitObjectDependency>

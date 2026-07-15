@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataKitObjectDependency xmlns="http://soap.sforce.com/2006/04/metadata">
+    <dataPackageKitDef>Bancassurance_Risk_Pipeline</dataPackageKitDef>
+    <developerName>banking_party_identificationcsv</developerName>
+    <masterLabel>banking_party_identificationcsv__dll</masterLabel>
+    <sourceObject>banking_party_identificationcsv1</sourceObject>
+    <sourceObjectType>DataSourceObject</sourceObjectType>
+    <targetObject>banking_party_identificationcsv</targetObject>
+</DataKitObjectDependency>

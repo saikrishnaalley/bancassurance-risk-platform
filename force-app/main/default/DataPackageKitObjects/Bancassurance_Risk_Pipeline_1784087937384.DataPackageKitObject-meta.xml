@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataPackageKitObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>Bancassurance_Risk_Pipeline</masterLabel>
+    <parentDataPackageKitDefinitionName>Bancassurance_Risk_Pipeline</parentDataPackageKitDefinitionName>
+    <referenceObjectName>UploadedFiles</referenceObjectName>
+    <referenceObjectType>DataKitObjectTemplate</referenceObjectType>
+</DataPackageKitObject>

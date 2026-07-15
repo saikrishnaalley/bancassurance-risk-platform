@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>KQ_Transaction_Id__c</fullName>
+    <label>Key Qualifier Transaction_Id</label>
+    <length>60</length>
+    <mktDataModelFieldAttributes>
+        <definitionCreationType>System</definitionCreationType>
+        <isDynamicLookup>false</isDynamicLookup>
+        <labelOverride>Key Qualifier Transaction_Id</labelOverride>
+        <masterLabel>Key Qualifier Transaction_Id</masterLabel>
+        <refAttrDeveloperName>KQ_Transaction_Id</refAttrDeveloperName>
+        <usageTag>KeyQualifier</usageTag>
+    </mktDataModelFieldAttributes>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>
