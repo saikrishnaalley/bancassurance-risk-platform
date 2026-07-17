@@ -1,11 +1,25 @@
+/**
+ * Resolves Data Cloud Unified Individual Ids back to the real, raw Customer_Key value
+ * injected into the source CSVs during preprocessing. Identity Resolution generates its
+ * own new identifier for a Unified Individual profile; that identifier is NOT the same
+ * value as the raw Customer_Key that Banking_Transaction__dlm, Insurance_Claim__dlm,
+ * Financial_Account__c, and Insurance_Policy__c all use. This class bridges the two.
+ */
 public with sharing class CustomerKeyResolver implements ICustomerKeyResolver {
 
-    // Simple, plain-data wrapper -- decouples the mapping logic below from the
-    // Data Cloud external object type, so that logic can be unit tested with
-    // ordinary in-memory objects instead of requiring a live query.
+    /**
+     * Simple, plain-data wrapper. Decouples the mapping logic below from the Data Cloud
+     * external object type, so that logic can be unit tested with ordinary in-memory
+     * objects instead of requiring a live query.
+     */
     public class BridgeRow {
         public String unifiedId;
         public String sourceId;
+
+        /**
+         * @param unifiedId Data Cloud Unified Individual Id
+         * @param sourceId Raw source Customer_Key resolved from the bridge table
+         */
         public BridgeRow(String unifiedId, String sourceId) {
             this.unifiedId = unifiedId;
             this.sourceId = sourceId;
@@ -16,6 +30,8 @@ public with sharing class CustomerKeyResolver implements ICustomerKeyResolver {
      * Resolves Unified Individual Ids back to the real, raw Customer_Key value that exists
      * in the source DMOs. See buildRawKeyMap below for the actual (testable) resolution logic;
      * this method is a thin, deliberately untestable wrapper around the Data Cloud query itself.
+     * @param unifiedIndividualIds Set of Data Cloud Unified Individual Ids to resolve
+     * @return Map of Unified Individual Id to raw Customer_Key
      */
     public Map<String, String> resolveRawCustomerKeys(Set<String> unifiedIndividualIds) {
         if (unifiedIndividualIds == null || unifiedIndividualIds.isEmpty()) {
@@ -24,10 +40,14 @@ public with sharing class CustomerKeyResolver implements ICustomerKeyResolver {
         return buildRawKeyMap(queryBridgeRows(unifiedIndividualIds));
     }
 
-    // UNTESTABLE by design: queries a Data Cloud external object, which cannot be seeded
-    // with synthetic data in a standard @isTest context. Kept intentionally thin (just the
-    // query and a type conversion) so the untestable surface area is as small as possible --
-    // all the actual resolution logic lives in the testable buildRawKeyMap method below.
+    /**
+     * UNTESTABLE by design: queries a Data Cloud external object, which cannot be seeded
+     * with synthetic data in a standard @isTest context. Kept intentionally thin (just the
+     * query and a type conversion) so the untestable surface area is as small as possible --
+     * all the actual resolution logic lives in the testable buildRawKeyMap method below.
+     * @param unifiedIndividualIds Set of Data Cloud Unified Individual Ids to look up
+     * @return Bridge table rows converted to the plain BridgeRow wrapper
+     */
     private List<BridgeRow> queryBridgeRows(Set<String> unifiedIndividualIds) {
         List<BridgeRow> rows = new List<BridgeRow>();
         for (UnifiedLinkssotIndividualRisk__dlm bridge : [
@@ -47,6 +67,8 @@ public with sharing class CustomerKeyResolver implements ICustomerKeyResolver {
      * If a unified profile maps to multiple source records (expected for the overlap
      * population, since both party identification files intentionally share the same
      * Customer_Key for those customers), the first non-blank value found wins.
+     * @param rows Bridge rows already fetched (e.g. by queryBridgeRows, or supplied directly in tests)
+     * @return Map of Unified Individual Id to raw Customer_Key
      */
     @TestVisible
     static Map<String, String> buildRawKeyMap(List<BridgeRow> rows) {
@@ -65,12 +87,21 @@ public with sharing class CustomerKeyResolver implements ICustomerKeyResolver {
         return rawKeyByUnifiedId;
     }
 
-    // Static convenience wrappers for callers (e.g. AccountBackfillService, ad hoc scripts)
-    // that don't need the injectable/testable seam RiskCaseService uses.
+    /**
+     * Static convenience wrapper for callers (e.g. AccountBackfillService, ad hoc scripts)
+     * that don't need the injectable/testable seam RiskCaseService uses.
+     * @param unifiedIndividualIds Set of Data Cloud Unified Individual Ids to resolve
+     * @return Map of Unified Individual Id to raw Customer_Key
+     */
     public static Map<String, String> resolveKeys(Set<String> unifiedIndividualIds) {
         return new CustomerKeyResolver().resolveRawCustomerKeys(unifiedIndividualIds);
     }
 
+    /**
+     * Static convenience wrapper resolving a single Unified Individual Id.
+     * @param unifiedIndividualId A single Data Cloud Unified Individual Id
+     * @return The resolved raw Customer_Key, or null if it could not be resolved
+     */
     public static String resolveKey(String unifiedIndividualId) {
         if (String.isBlank(unifiedIndividualId)) {
             return null;

@@ -1,6 +1,33 @@
 @isTest
 private class CustomerKeyResolverTest {
 
+    @TestSetup
+    static void setupRunAsUser() {
+        User u = new User(
+            FirstName = 'RunAs',
+            LastName = 'TestUser',
+            Email = 'runas.testuser@bancassurance.test.invalid',
+            Username = 'runas.testuser@bancassurance.test.invalid.' + Crypto.getRandomInteger(),
+            Alias = 'runau',
+            TimeZoneSidKey = 'America/Los_Angeles',
+            LocaleSidKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LanguageLocaleKey = 'en_US',
+            ProfileId = UserInfo.getProfileId()
+        );
+        insert u;
+    }
+
+    /**
+     * Returns a dedicated test user (created in setupRunAsUser via @TestSetup) so test
+     * methods can wrap their DML/query logic in System.runAs, per Apex testing best
+     * practice for verifying behavior under a specific user context.
+     */
+    private static User getRunAsUser() {
+        return [SELECT Id FROM User WHERE LastName = 'TestUser' AND FirstName = 'RunAs' LIMIT 1];
+    }
+
+
     // NOTE: queryBridgeRows() (the actual Data Cloud query) cannot be exercised here --
     // Data Cloud external objects can't be seeded with synthetic data in a standard @isTest
     // context, and there is no local mocking framework for them equivalent to Test.setMock
@@ -11,20 +38,22 @@ private class CustomerKeyResolverTest {
 
     @isTest
     static void testBuildRawKeyMap_NullList_ReturnsEmptyMap() {
-        Test.startTest();
-        Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(null);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(null);
+            Test.stopTest();
         System.assertEquals(0, result.size());
+        }
     }
 
     @isTest
     static void testBuildRawKeyMap_EmptyList_ReturnsEmptyMap() {
-        Test.startTest();
-        Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(new List<CustomerKeyResolver.BridgeRow>());
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(new List<CustomerKeyResolver.BridgeRow>());
+            Test.stopTest();
         System.assertEquals(0, result.size());
+        }
     }
 
     @isTest
@@ -33,12 +62,13 @@ private class CustomerKeyResolverTest {
             new CustomerKeyResolver.BridgeRow('UNIFIED-1', 'RAW-KEY-1')
         };
 
-        Test.startTest();
-        Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
+            Test.stopTest();
         System.assertEquals(1, result.size());
         System.assertEquals('RAW-KEY-1', result.get('UNIFIED-1'));
+        }
     }
 
     @isTest
@@ -51,12 +81,13 @@ private class CustomerKeyResolverTest {
             new CustomerKeyResolver.BridgeRow('UNIFIED-2', 'RAW-KEY-2')
         };
 
-        Test.startTest();
-        Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
+            Test.stopTest();
         System.assertEquals(1, result.size(), 'Duplicate bridge rows for the same unified id should not create extra map entries');
         System.assertEquals('RAW-KEY-2', result.get('UNIFIED-2'));
+        }
     }
 
     @isTest
@@ -68,12 +99,13 @@ private class CustomerKeyResolverTest {
             new CustomerKeyResolver.BridgeRow('UNIFIED-6', 'RAW-KEY-6')
         };
 
-        Test.startTest();
-        Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
+            Test.stopTest();
         System.assertEquals(1, result.size(), 'Only the one row with both a valid unifiedId and sourceId should resolve');
         System.assertEquals('RAW-KEY-6', result.get('UNIFIED-6'));
+        }
     }
 
     @isTest
@@ -83,34 +115,37 @@ private class CustomerKeyResolverTest {
             rows.add(new CustomerKeyResolver.BridgeRow('UNIFIED-BULK-' + i, 'RAW-BULK-' + i));
         }
 
-        Test.startTest();
-        Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            Map<String, String> result = CustomerKeyResolver.buildRawKeyMap(rows);
+            Test.stopTest();
         System.assertEquals(200, result.size());
         System.assertEquals('RAW-BULK-0', result.get('UNIFIED-BULK-0'));
         System.assertEquals('RAW-BULK-199', result.get('UNIFIED-BULK-199'));
+        }
     }
 
     @isTest
     static void testResolveRawCustomerKeys_EmptySet_ReturnsEmptyMap_WithoutQuerying() {
         // Exercises the instance method's early-return guard, which avoids calling
         // queryBridgeRows at all for empty input.
-        Test.startTest();
-        Map<String, String> result = new CustomerKeyResolver().resolveRawCustomerKeys(new Set<String>());
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            Map<String, String> result = new CustomerKeyResolver().resolveRawCustomerKeys(new Set<String>());
+            Test.stopTest();
         System.assertEquals(0, result.size());
+        }
     }
 
     @isTest
     static void testResolveKey_BlankInput_ReturnsNull_WithoutQuerying() {
-        Test.startTest();
-        String result = CustomerKeyResolver.resolveKey('');
-        String resultNull = CustomerKeyResolver.resolveKey(null);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            String result = CustomerKeyResolver.resolveKey('');
+            String resultNull = CustomerKeyResolver.resolveKey(null);
+            Test.stopTest();
         System.assertEquals(null, result);
         System.assertEquals(null, resultNull);
+        }
     }
 }

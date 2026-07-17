@@ -1,6 +1,33 @@
 @isTest
 private class RiskCaseServiceTest {
 
+    @TestSetup
+    static void setupRunAsUser() {
+        User u = new User(
+            FirstName = 'RunAs',
+            LastName = 'TestUser',
+            Email = 'runas.testuser@bancassurance.test.invalid',
+            Username = 'runas.testuser@bancassurance.test.invalid.' + Crypto.getRandomInteger(),
+            Alias = 'runau',
+            TimeZoneSidKey = 'America/Los_Angeles',
+            LocaleSidKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LanguageLocaleKey = 'en_US',
+            ProfileId = UserInfo.getProfileId()
+        );
+        insert u;
+    }
+
+    /**
+     * Returns a dedicated test user (created in setupRunAsUser via @TestSetup) so test
+     * methods can wrap their DML/query logic in System.runAs, per Apex testing best
+     * practice for verifying behavior under a specific user context.
+     */
+    private static User getRunAsUser() {
+        return [SELECT Id FROM User WHERE LastName = 'TestUser' AND FirstName = 'RunAs' LIMIT 1];
+    }
+
+
     // Stub resolver: since Data Cloud external objects can't be seeded with synthetic data,
     // this stub simulates CustomerKeyResolver's behavior with an identity mapping (each fake
     // "unified id" used in these tests resolves to itself as the "raw key"), except where a
@@ -38,12 +65,12 @@ private class RiskCaseServiceTest {
         req.riskScore = 3.5;
         req.riskReasonSummary = 'Banking anomaly + suspiciously-timed claim';
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>{ req }
-        );
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>{ req }
+            );
+            Test.stopTest();
         System.assertEquals(1, results.size(), 'Expected exactly one result for one request');
         System.assertEquals(true, results[0].wasCreated, 'A brand-new customer key should create a new case');
 
@@ -52,6 +79,7 @@ private class RiskCaseServiceTest {
         System.assertEquals(3.5, saved.Risk_Score__c);
         System.assertEquals('New', saved.Status__c);
         System.assertEquals('Banking anomaly + suspiciously-timed claim', saved.Risk_Reason_Summary__c);
+        }
     }
 
     @isTest
@@ -70,18 +98,19 @@ private class RiskCaseServiceTest {
         req.customerKey = 'CUST-0002';
         req.riskScore = 5;
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>{ req }
-        );
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>{ req }
+            );
+            Test.stopTest();
         System.assertEquals(false, results[0].wasCreated, 'An open case for the same customer should be updated, not duplicated');
         System.assertEquals(existing.Id, results[0].riskCaseId);
 
         List<Risk_Case__c> allCasesForCustomer = [SELECT Id, Risk_Score__c FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-0002'];
         System.assertEquals(1, allCasesForCustomer.size(), 'Should still be exactly one case for this customer');
         System.assertEquals(5, allCasesForCustomer[0].Risk_Score__c);
+        }
     }
 
     @isTest
@@ -100,16 +129,17 @@ private class RiskCaseServiceTest {
         req.customerKey = 'CUST-0003';
         req.riskScore = 2;
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>{ req }
-        );
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>{ req }
+            );
+            Test.stopTest();
         System.assertEquals(true, results[0].wasCreated, 'A closed prior case should not block a new case from being created');
 
         List<Risk_Case__c> allCasesForCustomer = [SELECT Id, Status__c FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-0003'];
         System.assertEquals(2, allCasesForCustomer.size(), 'The closed case and the new case should both exist');
+        }
     }
 
     @isTest
@@ -130,14 +160,15 @@ private class RiskCaseServiceTest {
         req.customerKey = 'CUST-0004';
         req.riskScore = 4;
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>{ req }
-        );
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>{ req }
+            );
+            Test.stopTest();
         Risk_Case__c saved = [SELECT Household__c FROM Risk_Case__c WHERE Id = :results[0].riskCaseId];
         System.assertEquals(household.Id, saved.Household__c);
+        }
     }
 
     @isTest
@@ -156,15 +187,16 @@ private class RiskCaseServiceTest {
         valid.customerKey = 'CUST-0006';
         valid.riskScore = 6;
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>{ blankKey, nullScore, valid }
-        );
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>{ blankKey, nullScore, valid }
+            );
+            Test.stopTest();
         System.assertEquals(1, results.size(), 'Only the valid request should produce a result');
         System.assertEquals(0, [SELECT COUNT() FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-0005']);
         System.assertEquals(1, [SELECT COUNT() FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-0006']);
+        }
     }
 
     @isTest
@@ -175,14 +207,15 @@ private class RiskCaseServiceTest {
         belowThreshold.customerKey = 'CUST-0007';
         belowThreshold.riskScore = 0.5;
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>{ belowThreshold }
-        );
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>{ belowThreshold }
+            );
+            Test.stopTest();
         System.assertEquals(0, results.size(), 'A below-threshold score should produce no result and no Risk_Case__c');
         System.assertEquals(0, [SELECT COUNT() FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-0007']);
+        }
     }
 
     @isTest
@@ -195,29 +228,31 @@ private class RiskCaseServiceTest {
         req.customerKey = 'CUST-UNRESOLVABLE';
         req.riskScore = 3;
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>{ req }
-        );
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>{ req }
+            );
+            Test.stopTest();
         System.assertEquals(0, results.size(), 'An unresolvable customer key should be skipped, not stored with a blank/wrong key');
         System.assertEquals(0, [SELECT COUNT() FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-UNRESOLVABLE']);
+        }
     }
 
     @isTest
     static void testEmptyOrNullRequestListReturnsEmptyResults() {
         RiskCaseService.keyResolver = new StubResolver();
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> emptyListResults = RiskCaseService.createOrUpdateRiskCase(
-            new List<RiskCaseService.RiskSignalRequest>()
-        );
-        List<RiskCaseService.RiskSignalResult> nullResults = RiskCaseService.createOrUpdateRiskCase(null);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> emptyListResults = RiskCaseService.createOrUpdateRiskCase(
+                new List<RiskCaseService.RiskSignalRequest>()
+            );
+            List<RiskCaseService.RiskSignalResult> nullResults = RiskCaseService.createOrUpdateRiskCase(null);
+            Test.stopTest();
         System.assertEquals(0, emptyListResults.size());
         System.assertEquals(0, nullResults.size());
+        }
     }
 
     @isTest
@@ -233,11 +268,12 @@ private class RiskCaseServiceTest {
             requests.add(req);
         }
 
-        Test.startTest();
-        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(requests);
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(requests);
+            Test.stopTest();
         System.assertEquals(200, results.size());
         System.assertEquals(200, [SELECT COUNT() FROM Risk_Case__c WHERE Customer_Key__c LIKE 'BULK-CUST-%']);
+        }
     }
 }

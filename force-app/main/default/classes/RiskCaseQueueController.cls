@@ -1,5 +1,10 @@
+/**
+ * Backend controller for the riskCaseQueue LWC (Fraud/Risk Analyst persona, Phase 6).
+ * Exposes the open Risk_Case__c queue, sorted by risk score, and a resolve action.
+ */
 public with sharing class RiskCaseQueueController {
 
+    /** Flattened, LWC-friendly view of a Risk_Case__c record. */
     public class RiskCaseRecord {
         @AuraEnabled public Id id;
         @AuraEnabled public String customerKey;
@@ -13,6 +18,10 @@ public with sharing class RiskCaseQueueController {
     // Statuses considered "open" / actionable for the analyst queue.
     private static final Set<String> OPEN_STATUSES = new Set<String>{ 'New', 'Under Investigation', 'Needs More Info' };
 
+    /**
+     * Returns open Risk_Case__c records for the analyst queue, highest risk first.
+     * @return Up to 200 open Risk_Case__c records, flattened for the LWC
+     */
     @AuraEnabled(cacheable=true)
     public static List<RiskCaseRecord> getOpenRiskCases() {
         List<RiskCaseRecord> results = new List<RiskCaseRecord>();
@@ -40,6 +49,11 @@ public with sharing class RiskCaseQueueController {
         return results;
     }
 
+    /**
+     * Updates a Risk_Case__c's status from the analyst queue's inline resolve action.
+     * @param riskCaseId Id of the Risk_Case__c to update
+     * @param newStatus New status value; must be one of the real Status__c picklist values
+     */
     @AuraEnabled
     public static void resolveRiskCase(Id riskCaseId, String newStatus) {
         Set<String> validStatuses = new Set<String>{

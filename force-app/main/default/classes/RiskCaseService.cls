@@ -1,3 +1,9 @@
+/**
+ * Creates or updates Risk_Case__c records from Data Cloud composite risk signals, and
+ * publishes a Risk_Signal_Change__e event for each. Invoked by the Data Cloud-Triggered
+ * Flow (Bancassurance_Risk_Case_Automation) as an Apex Action, or directly (e.g. Execute
+ * Anonymous) for manual/ad hoc testing.
+ */
 public with sharing class RiskCaseService {
     private static final Set<String> CLOSED_STATUSES = new Set<String>{ 'Confirmed Fraud', 'False Positive' };
 
@@ -12,6 +18,9 @@ public with sharing class RiskCaseService {
     @TestVisible
     private static ICustomerKeyResolver keyResolver = new CustomerKeyResolver();
 
+    /**
+     * One Data Cloud composite risk signal for a single customer.
+     */
     public class RiskSignalRequest {
         // Expected to be the Data Cloud Unified Individual Id (e.g. from
         // Bancassurance_Risk_Score__cio.unified_individual_id__c), NOT the raw source
@@ -27,6 +36,9 @@ public with sharing class RiskCaseService {
         public String riskReasonSummary;
     }
 
+    /**
+     * Outcome of processing one RiskSignalRequest.
+     */
     public class RiskSignalResult {
         @InvocableVariable(label='Risk Case Id')
         public Id riskCaseId;

@@ -1,6 +1,33 @@
 @isTest
 private class RiskCaseQueueControllerTest {
 
+    @TestSetup
+    static void setupRunAsUser() {
+        User u = new User(
+            FirstName = 'RunAs',
+            LastName = 'TestUser',
+            Email = 'runas.testuser@bancassurance.test.invalid',
+            Username = 'runas.testuser@bancassurance.test.invalid.' + Crypto.getRandomInteger(),
+            Alias = 'runau',
+            TimeZoneSidKey = 'America/Los_Angeles',
+            LocaleSidKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LanguageLocaleKey = 'en_US',
+            ProfileId = UserInfo.getProfileId()
+        );
+        insert u;
+    }
+
+    /**
+     * Returns a dedicated test user (created in setupRunAsUser via @TestSetup) so test
+     * methods can wrap their DML/query logic in System.runAs, per Apex testing best
+     * practice for verifying behavior under a specific user context.
+     */
+    private static User getRunAsUser() {
+        return [SELECT Id FROM User WHERE LastName = 'TestUser' AND FirstName = 'RunAs' LIMIT 1];
+    }
+
+
     @isTest
     static void testGetOpenRiskCases_ReturnsOnlyOpenStatuses_OrderedByScoreDesc() {
         insert new Risk_Case__c(Customer_Key__c = 'CUST-A', Risk_Score__c = 1, Status__c = 'New', Flagged_Date__c = System.now());
@@ -10,14 +37,15 @@ private class RiskCaseQueueControllerTest {
         insert new Risk_Case__c(Customer_Key__c = 'CUST-D', Risk_Score__c = 8, Status__c = 'Confirmed Fraud', Flagged_Date__c = System.now());
         insert new Risk_Case__c(Customer_Key__c = 'CUST-E', Risk_Score__c = 8, Status__c = 'False Positive', Flagged_Date__c = System.now());
 
-        Test.startTest();
-        List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
+            Test.stopTest();
         System.assertEquals(3, results.size(), 'Only the 3 open-status cases should be returned');
         System.assertEquals('CUST-B', results[0].customerKey, 'Highest score (5) should sort first');
         System.assertEquals('CUST-C', results[1].customerKey, 'Score 3 should sort second');
         System.assertEquals('CUST-A', results[2].customerKey, 'Score 1 should sort last');
+        }
     }
 
     @isTest
@@ -33,35 +61,38 @@ private class RiskCaseQueueControllerTest {
             Household__c = household.Id
         );
 
-        Test.startTest();
-        List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
+            Test.stopTest();
         System.assertEquals(1, results.size());
         System.assertEquals('Test Household', results[0].householdName);
+        }
     }
 
     @isTest
     static void testGetOpenRiskCases_NoHousehold_HouseholdNameIsNull() {
         insert new Risk_Case__c(Customer_Key__c = 'CUST-G', Risk_Score__c = 1, Status__c = 'New', Flagged_Date__c = System.now());
 
-        Test.startTest();
-        List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
+            Test.stopTest();
         System.assertEquals(1, results.size());
         System.assertEquals(null, results[0].householdName);
+        }
     }
 
     @isTest
     static void testGetOpenRiskCases_NoOpenCases_ReturnsEmptyList() {
         insert new Risk_Case__c(Customer_Key__c = 'CUST-H', Risk_Score__c = 1, Status__c = 'Confirmed Fraud', Flagged_Date__c = System.now());
 
-        Test.startTest();
-        List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
+            Test.stopTest();
         System.assertEquals(0, results.size());
+        }
     }
 
     @isTest
@@ -69,12 +100,13 @@ private class RiskCaseQueueControllerTest {
         Risk_Case__c rc = new Risk_Case__c(Customer_Key__c = 'CUST-I', Risk_Score__c = 3, Status__c = 'New', Flagged_Date__c = System.now());
         insert rc;
 
-        Test.startTest();
-        RiskCaseQueueController.resolveRiskCase(rc.Id, 'Confirmed Fraud');
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            RiskCaseQueueController.resolveRiskCase(rc.Id, 'Confirmed Fraud');
+            Test.stopTest();
         Risk_Case__c updated = [SELECT Status__c FROM Risk_Case__c WHERE Id = :rc.Id];
         System.assertEquals('Confirmed Fraud', updated.Status__c);
+        }
     }
 
     @isTest
@@ -83,18 +115,19 @@ private class RiskCaseQueueControllerTest {
         insert rc;
 
         Boolean exceptionThrown = false;
-        Test.startTest();
-        try {
-            RiskCaseQueueController.resolveRiskCase(rc.Id, 'Not A Real Status');
-        } catch (AuraHandledException e) {
-            exceptionThrown = true;
-        }
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            try {
+                RiskCaseQueueController.resolveRiskCase(rc.Id, 'Not A Real Status');
+            } catch (AuraHandledException e) {
+                exceptionThrown = true;
+            }
+            Test.stopTest();
         System.assertEquals(true, exceptionThrown, 'An invalid status value should throw an AuraHandledException');
 
         Risk_Case__c unchanged = [SELECT Status__c FROM Risk_Case__c WHERE Id = :rc.Id];
         System.assertEquals('New', unchanged.Status__c, 'Status should remain unchanged after a rejected update');
+        }
     }
 
     @isTest
@@ -106,15 +139,16 @@ private class RiskCaseQueueControllerTest {
         delete rc;
 
         Boolean exceptionThrown = false;
-        Test.startTest();
-        try {
-            RiskCaseQueueController.resolveRiskCase(deletedId, 'False Positive');
-        } catch (AuraHandledException e) {
-            exceptionThrown = true;
-        }
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            try {
+                RiskCaseQueueController.resolveRiskCase(deletedId, 'False Positive');
+            } catch (AuraHandledException e) {
+                exceptionThrown = true;
+            }
+            Test.stopTest();
         System.assertEquals(true, exceptionThrown, 'A non-existent Risk_Case__c Id should throw an AuraHandledException');
+        }
     }
 
     @isTest
@@ -130,16 +164,17 @@ private class RiskCaseQueueControllerTest {
         }
         insert bulkCases;
 
-        Test.startTest();
-        List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
-        Test.stopTest();
-
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseQueueController.RiskCaseRecord> results = RiskCaseQueueController.getOpenRiskCases();
+            Test.stopTest();
         System.assertEquals(200, results.size(), 'Query LIMIT 200 should cap the returned records even when more exist');
         for (Integer i = 0; i < results.size() - 1; i++) {
             System.assert(
                 results[i].riskScore >= results[i + 1].riskScore,
                 'Results must remain sorted by risk score descending across the full page'
             );
+        }
         }
     }
 }
