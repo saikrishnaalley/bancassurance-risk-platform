@@ -36,7 +36,7 @@ jobs:
         run: sf project deploy start --target-org riskorg --ignore-conflicts
 
       - name: Run Apex tests
-        run: sf apex run test --target-org riskorg --test-level RunLocalTests --result-format human --wait 20
+        run: sf apex run test --target-org riskorg --test-level RunLocalTests --code-coverage --result-format human --wait 20
 
       - name: Clean up key file
         if: always()
