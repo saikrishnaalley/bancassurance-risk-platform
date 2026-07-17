@@ -1,8 +1,38 @@
 @isTest
 private class RiskCaseServiceTest {
 
+    // Stub resolver: since Data Cloud external objects can't be seeded with synthetic data,
+    // this stub simulates CustomerKeyResolver's behavior with an identity mapping (each fake
+    // "unified id" used in these tests resolves to itself as the "raw key"), except where a
+    // test specifically wants to exercise the unresolved/skipped path.
+    private class StubResolver implements ICustomerKeyResolver {
+        private Set<String> unresolvableIds = new Set<String>();
+
+        public StubResolver() {
+        }
+
+        public StubResolver(Set<String> unresolvableIds) {
+            this.unresolvableIds = unresolvableIds;
+        }
+
+        public Map<String, String> resolveRawCustomerKeys(Set<String> unifiedIndividualIds) {
+            Map<String, String> result = new Map<String, String>();
+            if (unifiedIndividualIds == null) {
+                return result;
+            }
+            for (String id : unifiedIndividualIds) {
+                if (!unresolvableIds.contains(id)) {
+                    result.put(id, id);
+                }
+            }
+            return result;
+        }
+    }
+
     @isTest
     static void testHappyPath_NewCustomer_CreatesRiskCase() {
+        RiskCaseService.keyResolver = new StubResolver();
+
         RiskCaseService.RiskSignalRequest req = new RiskCaseService.RiskSignalRequest();
         req.customerKey = 'CUST-0001';
         req.riskScore = 3.5;
@@ -26,6 +56,8 @@ private class RiskCaseServiceTest {
 
     @isTest
     static void testExistingOpenCase_UpdatesInPlaceInsteadOfDuplicating() {
+        RiskCaseService.keyResolver = new StubResolver();
+
         Risk_Case__c existing = new Risk_Case__c(
             Customer_Key__c = 'CUST-0002',
             Status__c = 'Under Investigation',
@@ -54,6 +86,8 @@ private class RiskCaseServiceTest {
 
     @isTest
     static void testClosedCaseIsIgnored_NewSignalCreatesFreshCase() {
+        RiskCaseService.keyResolver = new StubResolver();
+
         Risk_Case__c closed = new Risk_Case__c(
             Customer_Key__c = 'CUST-0003',
             Status__c = 'Confirmed Fraud',
@@ -80,6 +114,8 @@ private class RiskCaseServiceTest {
 
     @isTest
     static void testLinksHouseholdFromMatchingFinancialAccount() {
+        RiskCaseService.keyResolver = new StubResolver();
+
         Household__c household = new Household__c(Name = 'Test Household');
         insert household;
 
@@ -106,6 +142,8 @@ private class RiskCaseServiceTest {
 
     @isTest
     static void testBlankOrNullInputsAreSkippedWithoutError() {
+        RiskCaseService.keyResolver = new StubResolver();
+
         RiskCaseService.RiskSignalRequest blankKey = new RiskCaseService.RiskSignalRequest();
         blankKey.customerKey = '';
         blankKey.riskScore = 5;
@@ -131,10 +169,8 @@ private class RiskCaseServiceTest {
 
     @isTest
     static void testBelowThresholdScoreIsSkipped_NoRiskCaseCreated() {
-        // Explicit coverage for the RISK_SCORE_THRESHOLD guard added to RiskCaseService.
-        // A score below the locked-in threshold (1) should be silently filtered out,
-        // matching the actual verified Bancassurance_Risk_Score composite score behavior
-        // (customers scoring 0 across all four rules should never produce a Risk_Case__c).
+        RiskCaseService.keyResolver = new StubResolver();
+
         RiskCaseService.RiskSignalRequest belowThreshold = new RiskCaseService.RiskSignalRequest();
         belowThreshold.customerKey = 'CUST-0007';
         belowThreshold.riskScore = 0.5;
@@ -150,7 +186,29 @@ private class RiskCaseServiceTest {
     }
 
     @isTest
+    static void testUnresolvableCustomerKey_IsSkippedWithoutError() {
+        // Simulates a Unified Individual Id that the bridge table has no match for
+        // (e.g. a data lag, or an id that never made it into Identity Resolution).
+        RiskCaseService.keyResolver = new StubResolver(new Set<String>{ 'CUST-UNRESOLVABLE' });
+
+        RiskCaseService.RiskSignalRequest req = new RiskCaseService.RiskSignalRequest();
+        req.customerKey = 'CUST-UNRESOLVABLE';
+        req.riskScore = 3;
+
+        Test.startTest();
+        List<RiskCaseService.RiskSignalResult> results = RiskCaseService.createOrUpdateRiskCase(
+            new List<RiskCaseService.RiskSignalRequest>{ req }
+        );
+        Test.stopTest();
+
+        System.assertEquals(0, results.size(), 'An unresolvable customer key should be skipped, not stored with a blank/wrong key');
+        System.assertEquals(0, [SELECT COUNT() FROM Risk_Case__c WHERE Customer_Key__c = 'CUST-UNRESOLVABLE']);
+    }
+
+    @isTest
     static void testEmptyOrNullRequestListReturnsEmptyResults() {
+        RiskCaseService.keyResolver = new StubResolver();
+
         Test.startTest();
         List<RiskCaseService.RiskSignalResult> emptyListResults = RiskCaseService.createOrUpdateRiskCase(
             new List<RiskCaseService.RiskSignalRequest>()
@@ -164,6 +222,8 @@ private class RiskCaseServiceTest {
 
     @isTest
     static void testBulkAtGovernorLimitBoundary_TwoHundredUniqueCustomers() {
+        RiskCaseService.keyResolver = new StubResolver();
+
         List<RiskCaseService.RiskSignalRequest> requests = new List<RiskCaseService.RiskSignalRequest>();
         for (Integer i = 0; i < 200; i++) {
             RiskCaseService.RiskSignalRequest req = new RiskCaseService.RiskSignalRequest();

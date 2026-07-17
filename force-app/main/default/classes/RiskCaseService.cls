@@ -6,7 +6,17 @@ public with sharing class RiskCaseService {
     // least one of the four risk-flag rules to warrant a Risk_Case__c.
     private static final Decimal RISK_SCORE_THRESHOLD = 1;
 
+    // Injectable seam: production uses the real CustomerKeyResolver (queries the Data Cloud
+    // bridge table). Tests substitute a stub, since Data Cloud external objects can't be
+    // seeded with synthetic records in a standard @isTest context.
+    @TestVisible
+    private static ICustomerKeyResolver keyResolver = new CustomerKeyResolver();
+
     public class RiskSignalRequest {
+        // Expected to be the Data Cloud Unified Individual Id (e.g. from
+        // Bancassurance_Risk_Score__cio.unified_individual_id__c), NOT the raw source
+        // Customer_Key. Resolved to the real raw Customer_Key internally below before
+        // anything is stored -- see CustomerKeyResolver for why these differ.
         @InvocableVariable(required=true label='Customer Key')
         public String customerKey;
 
@@ -27,7 +37,7 @@ public with sharing class RiskCaseService {
 
     @InvocableMethod(
         label='Create or Update Risk Case'
-        description='Upserts an open Risk_Case__c from a Data Cloud composite risk signal (score >= threshold only) and publishes a Risk_Signal_Change__e event.'
+        description='Resolves the Unified Individual Id to the real raw Customer_Key, then upserts an open Risk_Case__c from a Data Cloud composite risk signal (score >= threshold only) and publishes a Risk_Signal_Change__e event.'
         category='Risk'
     )
     public static List<RiskSignalResult> createOrUpdateRiskCase(List<RiskSignalRequest> requests) {
@@ -40,20 +50,39 @@ public with sharing class RiskCaseService {
         // conditions cannot filter directly on the Calculated Insight's custom output field
         // (composite_risk_score__c), so this method is the actual threshold enforcement point.
         List<RiskSignalRequest> qualifying = new List<RiskSignalRequest>();
+        Set<String> unifiedIds = new Set<String>();
         for (RiskSignalRequest req : requests) {
             if (String.isNotBlank(req.customerKey)
                 && req.riskScore != null
                 && req.riskScore >= RISK_SCORE_THRESHOLD) {
                 qualifying.add(req);
+                unifiedIds.add(req.customerKey);
             }
         }
         if (qualifying.isEmpty()) {
             return results;
         }
 
+        // Resolve Unified Individual Id -> real raw Customer_Key before anything else,
+        // so Risk_Case__c.Customer_Key__c always matches Financial_Account__c.Customer_Key__c
+        // and Insurance_Policy__c.Customer_Key__c (both populated from the raw source data).
+        Map<String, String> rawKeyByUnifiedId = keyResolver.resolveRawCustomerKeys(unifiedIds);
+
         Set<String> customerKeys = new Set<String>();
         for (RiskSignalRequest req : qualifying) {
-            customerKeys.add(req.customerKey);
+            String rawKey = rawKeyByUnifiedId.get(req.customerKey);
+            if (String.isBlank(rawKey)) {
+                System.debug(
+                    LoggingLevel.WARN,
+                    'RiskCaseService: could not resolve raw Customer_Key for Unified Individual Id '
+                    + req.customerKey + '; skipping this request rather than storing an unresolved key.'
+                );
+                continue;
+            }
+            customerKeys.add(rawKey);
+        }
+        if (customerKeys.isEmpty()) {
+            return results;
         }
 
         Map<String, Risk_Case__c> openCaseByCustomerKey = new Map<String, Risk_Case__c>();
@@ -87,16 +116,21 @@ public with sharing class RiskCaseService {
         List<Boolean> isNewByIndex = new List<Boolean>();
 
         for (RiskSignalRequest req : qualifying) {
-            Risk_Case__c riskCase = openCaseByCustomerKey.get(req.customerKey);
+            String rawKey = rawKeyByUnifiedId.get(req.customerKey);
+            if (String.isBlank(rawKey)) {
+                continue;
+            }
+
+            Risk_Case__c riskCase = openCaseByCustomerKey.get(rawKey);
             Boolean isNew = riskCase == null;
             if (isNew) {
                 riskCase = new Risk_Case__c(
-                    Customer_Key__c = req.customerKey,
+                    Customer_Key__c = rawKey,
                     Status__c = 'New',
                     Flagged_Date__c = System.now()
                 );
-                if (householdByCustomerKey.containsKey(req.customerKey)) {
-                    riskCase.Household__c = householdByCustomerKey.get(req.customerKey);
+                if (householdByCustomerKey.containsKey(rawKey)) {
+                    riskCase.Household__c = householdByCustomerKey.get(rawKey);
                 }
             }
 
