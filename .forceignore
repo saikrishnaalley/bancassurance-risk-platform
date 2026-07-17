@@ -11,7 +11,7 @@ package.xml
 **/dataCalcInsightTemplates/**
 **/mktCalcInsightObjectDefs/**
 **/flows/Bancassurance_Risk_Case_Automation.flow-meta.xml
-**/flows/Risk_Case_Auto_Create.flow-meta.xml
+
 
 # LWC Jest
 **/__tests__/**
