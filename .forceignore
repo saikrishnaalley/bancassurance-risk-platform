@@ -8,6 +8,9 @@ package.xml
 **/jsconfig.json
 **/.eslintrc.json
 
+**/dataCalcInsightTemplates/**
+**/flows/Bancassurance_Risk_Case_Automation.flow-meta.xml
+
 # LWC Jest
 **/__tests__/**
 
