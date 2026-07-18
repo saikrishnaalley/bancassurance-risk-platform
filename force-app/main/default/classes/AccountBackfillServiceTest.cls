@@ -111,7 +111,11 @@ private class AccountBackfillServiceTest {
     }
 
     @isTest
-    static void testBuildHouseholdsToInsert_NamesUseUppercasedKeyPrefix() {
+    static void testBuildHouseholdsToInsert_NamesUseFullUppercasedKey() {
+        // Regression test: an earlier version truncated to the first 8 characters, which
+        // collided for real-world CUST-XXXXXX-format keys sharing a common prefix (e.g.
+        // CUST-001168 and CUST-001307 both truncated to "CUST-001"). Household names must
+        // use the full key so two different customers never get an identical-looking name.
         Set<String> rawKeys = new Set<String>{ 'abcdefgh12345' };
 
         System.runAs(getRunAsUser()) {
@@ -119,7 +123,26 @@ private class AccountBackfillServiceTest {
             List<Household__c> toInsert = AccountBackfillService.buildHouseholdsToInsert(rawKeys, new Map<String, Id>());
             Test.stopTest();
         System.assertEquals(1, toInsert.size());
-        System.assertEquals('Household ABCDEFGH', toInsert[0].Name);
+        System.assertEquals('Household ABCDEFGH12345', toInsert[0].Name);
+        }
+    }
+
+    @isTest
+    static void testBuildHouseholdsToInsert_NoNameCollisionForKeysWithSharedPrefix() {
+        // Direct regression test for the real bug found in the org: CUST-001168 and
+        // CUST-001307 previously both produced "Household CUST-001" (8-char truncation).
+        Set<String> rawKeys = new Set<String>{ 'CUST-001168', 'CUST-001307' };
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<Household__c> toInsert = AccountBackfillService.buildHouseholdsToInsert(rawKeys, new Map<String, Id>());
+            Test.stopTest();
+        System.assertEquals(2, toInsert.size());
+        Set<String> names = new Set<String>();
+        for (Household__c h : toInsert) {
+            names.add(h.Name);
+        }
+        System.assertEquals(2, names.size(), 'Both households must have distinct names, not a shared truncated prefix');
         }
     }
 

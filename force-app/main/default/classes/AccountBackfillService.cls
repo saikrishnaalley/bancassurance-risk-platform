@@ -187,7 +187,13 @@ public with sharing class AccountBackfillService {
             if (!claimByRawKey.containsKey(claim.Customer_Key__c)) {
                 ClaimData data = new ClaimData();
                 data.policyNumber = claim.Policy_Number__c != null ? String.valueOf(claim.Policy_Number__c) : null;
-                data.policyType = claim.PolicyType__c;
+                // Insurance_Policy__c.Policy_Type__c is a coarse Auto/Home/Life picklist, but
+                // the source DMO's PolicyType__c is a compound "VehicleCategory - CoverageType"
+                // string (e.g. "Sedan - Collision", from the original vehicle-insurance-only
+                // Kaggle dataset schema) that was never going to fit that picklist directly.
+                // Since this entire dataset is vehicle insurance, 'Auto' is the honest, correct
+                // mapping -- the vehicle category detail itself is preserved separately below.
+                data.policyType = 'Auto';
                 data.vehicleCategory = claim.VehicleCategory__c;
                 data.fraudFlag = claim.FraudFound_P__c != null && claim.FraudFound_P__c == 1;
                 claimByRawKey.put(claim.Customer_Key__c, data);
@@ -207,7 +213,7 @@ public with sharing class AccountBackfillService {
         List<Household__c> toInsert = new List<Household__c>();
         for (String rawKey : rawKeys) {
             if (!existingHouseholdByRawKey.containsKey(rawKey)) {
-                toInsert.add(new Household__c(Name = 'Household ' + rawKey.left(8).toUpperCase()));
+                toInsert.add(new Household__c(Name = 'Household ' + rawKey.toUpperCase()));
             }
         }
         return toInsert;
@@ -266,7 +272,7 @@ public with sharing class AccountBackfillService {
                 output.accountsToInsert.add(new Financial_Account__c(
                     Household__c = householdId,
                     Customer_Key__c = rawKey,
-                    Account_Number__c = 'ACCT-' + rawKey.left(8).toUpperCase(),
+                    Account_Number__c = 'ACCT-' + rawKey.toUpperCase(),
                     Account_Type__c = 'Checking',
                     Balance__c = totalAmountByRawKey.get(rawKey)
                 ));

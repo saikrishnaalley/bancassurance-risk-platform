@@ -1,8 +1,12 @@
-// ONE-TIME DATA FIX -- run this once via Execute Anonymous (Developer Console or VS Code)
-// against the 5 real flagged customers created earlier this session.
+// ONE-TIME DATA FIX -- run this once via Execute Anonymous.
+//
+// IMPORTANT: Data Cloud external object queries (CustomerKeyResolver) are backed by a
+// callout under the hood and cannot run while there is uncommitted DML pending in the
+// same transaction. So resolve the raw keys ONCE, at the very top, before any DML
+// happens anywhere else in this script -- do not call CustomerKeyResolver again later.
 //
 // What it does:
-// 1. Resolves each customer's Unified Individual Id to the real raw Customer_Key
+// 1. Resolves each customer's Unified Individual Id to the real raw Customer_Key (ONCE)
 // 2. Backfills real Financial_Account__c / Insurance_Policy__c / Household__c records
 // 3. Corrects the existing Risk_Case__c.Customer_Key__c from the Unified Individual Id
 //    to the resolved raw Customer_Key, and links Household__c now that it exists
@@ -15,7 +19,11 @@ Set<String> flaggedUnifiedIds = new Set<String>{
     '17cf53f75cdbd05237cccecc4f9a23be'
 };
 
-// Step 1 & 2: backfill real account data.
+// Resolve ONCE, before any DML happens anywhere in this script.
+Map<String, String> rawKeyByUnifiedId = CustomerKeyResolver.resolveKeys(flaggedUnifiedIds);
+System.debug('Resolved raw keys: ' + rawKeyByUnifiedId);
+
+// Step 1 & 2: backfill real account data. (This performs DML internally.)
 AccountBackfillService.BackfillResult backfillResult =
     AccountBackfillService.backfillForUnifiedIndividualIds(flaggedUnifiedIds);
 
@@ -24,9 +32,9 @@ System.debug('Financial Accounts created: ' + backfillResult.financialAccountsCr
 System.debug('Insurance Policies created: ' + backfillResult.insurancePoliciesCreated);
 System.debug('Skipped (could not resolve): ' + backfillResult.skippedRawKeys);
 
-// Step 3: correct the existing Risk_Case__c records.
-Map<String, String> rawKeyByUnifiedId = CustomerKeyResolver.resolveKeys(flaggedUnifiedIds);
-
+// Step 3: correct the existing Risk_Case__c records, reusing the SAME rawKeyByUnifiedId
+// map resolved at the top -- no second Data Cloud query needed (and none would work now
+// anyway, since DML has already happened above).
 List<Risk_Case__c> casesToFix = [
     SELECT Id, Customer_Key__c, Household__c
     FROM Risk_Case__c
@@ -34,11 +42,12 @@ List<Risk_Case__c> casesToFix = [
 ];
 
 // Look up the Household__c that the backfill just created/linked for each raw key.
+Set<String> resolvedRawKeys = new Set<String>(rawKeyByUnifiedId.values());
 Map<String, Id> householdByRawKey = new Map<String, Id>();
 for (Financial_Account__c acct : [
     SELECT Customer_Key__c, Household__c
     FROM Financial_Account__c
-    WHERE Customer_Key__c IN :rawKeyByUnifiedId.values()
+    WHERE Customer_Key__c IN :resolvedRawKeys
 ]) {
     householdByRawKey.put(acct.Customer_Key__c, acct.Household__c);
 }
