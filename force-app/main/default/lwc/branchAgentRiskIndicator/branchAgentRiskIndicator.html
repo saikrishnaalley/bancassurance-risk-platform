@@ -1,0 +1,40 @@
+<template>
+    <lightning-card title="Risk Status" icon-name="utility:shield">
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Checking risk status" size="small"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoading}>
+                <div class={indicatorClass}>
+                    <lightning-icon icon-name={iconName} size="small" class="slds-m-right_small"></lightning-icon>
+                    <span class="slds-text-heading_small">{statusLabel}</span>
+                </div>
+
+                <template if:true={isFlagged}>
+                    <p class="slds-p-top_small slds-text-body_regular">{summary.suggestedAction}</p>
+                    <template if:true={canEscalate}>
+                        <lightning-button
+                            label="Escalate to Fraud Team"
+                            variant="destructive"
+                            onclick={handleEscalate}
+                            disabled={isEscalating}
+                            class="slds-p-top_small"
+                        ></lightning-button>
+                    </template>
+                    <template if:false={canEscalate}>
+                        <p class="slds-p-top_small slds-text-body_small slds-text-color_weak">
+                            Already under investigation by the fraud team.
+                        </p>
+                    </template>
+                </template>
+
+                <template if:false={isFlagged}>
+                    <p class="slds-p-top_small slds-text-body_small slds-text-color_weak">
+                        Proceed normally. No active risk flags for this customer.
+                    </p>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

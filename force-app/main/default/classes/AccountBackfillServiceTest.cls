@@ -183,6 +183,7 @@ private class AccountBackfillServiceTest {
         claim.policyType = 'Auto';
         claim.vehicleCategory = 'Sport';
         claim.fraudFlag = true;
+        claim.claimDate = Date.newInstance(2026, 3, 15);
         Map<String, AccountBackfillService.ClaimData> claimByRawKey =
             new Map<String, AccountBackfillService.ClaimData>{ 'RAW-X' => claim };
 
@@ -202,6 +203,7 @@ private class AccountBackfillServiceTest {
         System.assertEquals('Auto', output.policiesToInsert[0].Policy_Type__c);
         System.assertEquals('Sport', output.policiesToInsert[0].Vehicle_Category__c);
         System.assertEquals(true, output.policiesToInsert[0].Fraud_Flag__c);
+        System.assertEquals(Date.newInstance(2026, 3, 15), output.policiesToInsert[0].Claim_Date__c);
         }
     }
 
@@ -260,6 +262,7 @@ private class AccountBackfillServiceTest {
             claim.policyType = 'Auto';
             claim.vehicleCategory = 'Sedan';
             claim.fraudFlag = Math.mod(i, 10) == 0;
+            claim.claimDate = Date.newInstance(2026, Math.mod(i, 12) + 1, 1);
             claimByRawKey.put(rawKey, claim);
         }
 
@@ -322,6 +325,84 @@ private class AccountBackfillServiceTest {
             }
             return result;
         }
+    }
+
+    @isTest
+    static void testDeriveClaimDate_HappyPath_ReturnsExpectedDate() {
+        Test.startTest();
+        Date result = AccountBackfillService.deriveClaimDate('Mar', 3, 2026);
+        Test.stopTest();
+
+        // Week 3 approximates to day 15 (week 1 = day 1, week 2 = day 8, week 3 = day 15).
+        System.assertEquals(Date.newInstance(2026, 3, 15), result);
+    }
+
+    @isTest
+    static void testDeriveClaimDate_WeekOneApproximatesToFirstOfMonth() {
+        Test.startTest();
+        Date result = AccountBackfillService.deriveClaimDate('Jan', 1, 2026);
+        Test.stopTest();
+
+        System.assertEquals(Date.newInstance(2026, 1, 1), result);
+    }
+
+    @isTest
+    static void testDeriveClaimDate_WeekFiveCappedToLastRealDayOfMonth() {
+        // Week 5 would naively compute to day 29, but February 2026 (not a leap year)
+        // only has 28 days -- must be capped to a real calendar date, not overflow.
+        Test.startTest();
+        Date result = AccountBackfillService.deriveClaimDate('Feb', 5, 2026);
+        Test.stopTest();
+
+        System.assertEquals(Date.newInstance(2026, 2, 28), result);
+    }
+
+    @isTest
+    static void testDeriveClaimDate_LeapYearFebruary_CapsToTwentyNine() {
+        Test.startTest();
+        Date result = AccountBackfillService.deriveClaimDate('Feb', 5, 2028);
+        Test.stopTest();
+
+        System.assertEquals(Date.newInstance(2028, 2, 29), result);
+    }
+
+    @isTest
+    static void testDeriveClaimDate_UnrecognizedMonthName_ReturnsNull() {
+        Test.startTest();
+        Date result = AccountBackfillService.deriveClaimDate('NotAMonth', 2, 2026);
+        Test.stopTest();
+
+        System.assertEquals(null, result);
+    }
+
+    @isTest
+    static void testDeriveClaimDate_MissingInputs_ReturnsNullWithoutError() {
+        Test.startTest();
+        Date r1 = AccountBackfillService.deriveClaimDate(null, 2, 2026);
+        Date r2 = AccountBackfillService.deriveClaimDate('Jun', null, 2026);
+        Date r3 = AccountBackfillService.deriveClaimDate('Jun', 2, null);
+        Date r4 = AccountBackfillService.deriveClaimDate('', 2, 2026);
+        Test.stopTest();
+
+        System.assertEquals(null, r1);
+        System.assertEquals(null, r2);
+        System.assertEquals(null, r3);
+        System.assertEquals(null, r4);
+    }
+
+    @isTest
+    static void testDeriveClaimDate_AllTwelveMonthAbbreviations_AllResolve() {
+        List<String> months = new List<String>{
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        };
+
+        Test.startTest();
+        for (Integer i = 0; i < months.size(); i++) {
+            Date result = AccountBackfillService.deriveClaimDate(months[i], 1, 2026);
+            System.assertNotEquals(null, result, months[i] + ' should resolve to a valid date');
+            System.assertEquals(i + 1, result.month());
+        }
+        Test.stopTest();
     }
 
     private static Id createFakeHouseholdId() {

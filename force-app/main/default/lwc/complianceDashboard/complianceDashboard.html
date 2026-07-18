@@ -1,0 +1,63 @@
+<template>
+    <lightning-card title="Compliance Dashboard" icon-name="standard:report">
+        <span slot="actions" class="total-label">{totalCases} total cases</span>
+
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading dashboard" size="small"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:false={hasData}>
+                    <div class="slds-illustration slds-illustration_small slds-text-align_center slds-p-vertical_large">
+                        <p class="slds-text-heading_small slds-text-color_weak">No risk cases yet</p>
+                    </div>
+                </template>
+
+                <template if:true={hasData}>
+                    <h3 class="slds-text-heading_small slds-p-bottom_small">Status Breakdown</h3>
+                    <template for:each={statusBreakdownWithPercent} for:item="row">
+                        <div key={row.status} class="status-row">
+                            <div class="slds-grid slds-grid_align-spread slds-p-bottom_xx-small">
+                                <span class="slds-text-body_regular">{row.status}</span>
+                                <span class="slds-text-body_small slds-text-color_weak">{row.count} ({row.percent}%)</span>
+                            </div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style={row.barStyle}></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <h3 class="slds-text-heading_small slds-p-top_medium slds-p-bottom_small">Audit Trail</h3>
+                    <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col"><div class="slds-truncate">Customer</div></th>
+                                <th scope="col"><div class="slds-truncate">Score</div></th>
+                                <th scope="col"><div class="slds-truncate">Status</div></th>
+                                <th scope="col"><div class="slds-truncate">Flagged</div></th>
+                                <th scope="col"><div class="slds-truncate">Reason</div></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={auditTrail} for:item="row">
+                                <tr key={row.id}>
+                                    <td><div class="slds-truncate">{row.householdName}</div></td>
+                                    <td>{row.riskScore}</td>
+                                    <td><lightning-badge label={row.status}></lightning-badge></td>
+                                    <td>
+                                        <lightning-formatted-date-time
+                                            value={row.flaggedDate}
+                                            year="numeric" month="short" day="2-digit"
+                                        ></lightning-formatted-date-time>
+                                    </td>
+                                    <td><div class="slds-truncate reason-cell">{row.riskReasonSummary}</div></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

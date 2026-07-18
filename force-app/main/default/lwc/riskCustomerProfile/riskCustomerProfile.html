@@ -1,0 +1,76 @@
+<template>
+    <lightning-card title="Customer Profile" icon-name="standard:account">
+        <span slot="actions" if:true={hasHousehold} class="household-label">{householdName}</span>
+
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading customer profile" size="small"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:false={hasHousehold}>
+                    <div class="slds-illustration slds-illustration_small slds-text-align_center slds-p-vertical_large">
+                        <p class="slds-text-heading_small slds-text-color_weak">No linked household</p>
+                        <p class="slds-text-body_small slds-text-color_weak">
+                            This risk case isn't linked to a Household record yet, so no account or policy data is available.
+                        </p>
+                    </div>
+                </template>
+
+                <template if:true={hasHousehold}>
+                    <p class="slds-text-body_small slds-text-color_weak slds-p-bottom_small">
+                        Insurance policies are sorted by claim date (most recent first). Banking accounts aren't date-stamped in the source data, so they're shown unordered.
+                    </p>
+
+                    <div class="slds-grid slds-gutters slds-wrap">
+                        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-2 slds-small-size_1-of-1">
+                            <h3 class="slds-text-heading_small slds-p-bottom_x-small">Financial Accounts</h3>
+                            <template if:true={hasAccounts}>
+                                <template for:each={profile.accounts} for:item="acct">
+                                    <div key={acct.id} class="record-tile">
+                                        <div class="slds-grid slds-grid_align-spread">
+                                            <span class="slds-text-body_regular slds-text-color_default">{acct.accountNumber}</span>
+                                            <lightning-badge label={acct.accountType}></lightning-badge>
+                                        </div>
+                                        <lightning-formatted-number
+                                            value={acct.balance}
+                                            format-style="currency"
+                                            currency-code="USD"
+                                        ></lightning-formatted-number>
+                                    </div>
+                                </template>
+                            </template>
+                            <template if:false={hasAccounts}>
+                                <p class="slds-text-body_small slds-text-color_weak">No banking accounts on file.</p>
+                            </template>
+                        </div>
+
+                        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-2 slds-small-size_1-of-1">
+                            <h3 class="slds-text-heading_small slds-p-bottom_x-small">Insurance Policies</h3>
+                            <template if:true={hasPolicies}>
+                                <template for:each={profile.policies} for:item="pol">
+                                    <div key={pol.id} class="record-tile">
+                                        <div class="slds-grid slds-grid_align-spread">
+                                            <span class="slds-text-body_regular slds-text-color_default">Policy #{pol.policyNumber}</span>
+                                            <template if:true={pol.fraudFlag}>
+                                                <lightning-badge label="Fraud Flagged" class="fraud-badge"></lightning-badge>
+                                            </template>
+                                        </div>
+                                        <p class="slds-text-body_small slds-text-color_weak">{pol.policyType} &middot; {pol.vehicleCategory}</p>
+                                        <lightning-formatted-date-time
+                                            value={pol.claimDate}
+                                            year="numeric" month="short" day="2-digit"
+                                        ></lightning-formatted-date-time>
+                                    </div>
+                                </template>
+                            </template>
+                            <template if:false={hasPolicies}>
+                                <p class="slds-text-body_small slds-text-color_weak">No insurance policies on file.</p>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

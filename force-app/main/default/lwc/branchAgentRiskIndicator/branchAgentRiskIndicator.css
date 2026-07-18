@@ -1,0 +1,11 @@
+.indicator-flagged {
+    display: flex;
+    align-items: center;
+    color: #a61b1b;
+}
+
+.indicator-clear {
+    display: flex;
+    align-items: center;
+    color: #2e844a;
+}

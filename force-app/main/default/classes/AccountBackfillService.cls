@@ -31,6 +31,7 @@ public with sharing class AccountBackfillService {
         public String policyType;
         public String vehicleCategory;
         public Boolean fraudFlag;
+        public Date claimDate;
     }
 
     /**
@@ -180,26 +181,60 @@ public with sharing class AccountBackfillService {
     private static Map<String, ClaimData> fetchClaimData(Set<String> rawKeys) {
         Map<String, ClaimData> claimByRawKey = new Map<String, ClaimData>();
         for (Insurance_Claim__dlm claim : [
-            SELECT Customer_Key__c, Policy_Number__c, PolicyType__c, VehicleCategory__c, FraudFound_P__c
+            SELECT Customer_Key__c, Policy_Number__c, PolicyType__c, VehicleCategory__c, FraudFound_P__c,
+                   MonthClaimed__c, WeekOfMonthClaimed__c, Year__c
             FROM Insurance_Claim__dlm
             WHERE Customer_Key__c IN :rawKeys
         ]) {
             if (!claimByRawKey.containsKey(claim.Customer_Key__c)) {
                 ClaimData data = new ClaimData();
                 data.policyNumber = claim.Policy_Number__c != null ? String.valueOf(claim.Policy_Number__c) : null;
-                // Insurance_Policy__c.Policy_Type__c is a coarse Auto/Home/Life picklist, but
-                // the source DMO's PolicyType__c is a compound "VehicleCategory - CoverageType"
-                // string (e.g. "Sedan - Collision", from the original vehicle-insurance-only
-                // Kaggle dataset schema) that was never going to fit that picklist directly.
-                // Since this entire dataset is vehicle insurance, 'Auto' is the honest, correct
-                // mapping -- the vehicle category detail itself is preserved separately below.
+                // Policy_Type__c is a coarse Auto/Home/Life picklist; this dataset is entirely
+                // vehicle insurance, so 'Auto' is the honest mapping (see class doc for detail).
                 data.policyType = 'Auto';
                 data.vehicleCategory = claim.VehicleCategory__c;
                 data.fraudFlag = claim.FraudFound_P__c != null && claim.FraudFound_P__c == 1;
+                data.claimDate = deriveClaimDate(claim.MonthClaimed__c, claim.WeekOfMonthClaimed__c, claim.Year__c);
                 claimByRawKey.put(claim.Customer_Key__c, data);
             }
         }
         return claimByRawKey;
+    }
+
+    /**
+     * TESTABLE: pure logic, no query or DML. Derives an approximate real Date from the
+     * source dataset's categorical MonthClaimed / WeekOfMonthClaimed / Year fields.
+     * Honest approximation, documented: the source data gives month, year, and which
+     * week of the month (1-5), not an exact day -- day-of-month is approximated as the
+     * first day of that week (week 1 = day 1, week 2 = day 8, etc.), capped to the last
+     * real day of that month/year so the result is never an invalid calendar date.
+     * @param monthName Three-letter month abbreviation (e.g. 'Jan'), as stored in the source data
+     * @param weekOfMonth Which week of the month (1-5)
+     * @param year Calendar year
+     * @return Approximated Date, or null if any required input is missing/unrecognized
+     */
+    @TestVisible
+    static Date deriveClaimDate(String monthName, Decimal weekOfMonth, Decimal year) {
+        if (String.isBlank(monthName) || weekOfMonth == null || year == null) {
+            return null;
+        }
+
+        Map<String, Integer> monthNumberByName = new Map<String, Integer>{
+            'Jan' => 1, 'Feb' => 2, 'Mar' => 3, 'Apr' => 4, 'May' => 5, 'Jun' => 6,
+            'Jul' => 7, 'Aug' => 8, 'Sep' => 9, 'Oct' => 10, 'Nov' => 11, 'Dec' => 12
+        };
+        Integer monthNum = monthNumberByName.get(monthName.trim());
+        if (monthNum == null) {
+            return null;
+        }
+
+        Integer yearInt = Integer.valueOf(year);
+        Integer approxDay = (Integer.valueOf(weekOfMonth) - 1) * 7 + 1;
+        Integer lastDayOfMonth = Date.daysInMonth(yearInt, monthNum);
+        Integer safeDay = Math.min(approxDay, lastDayOfMonth);
+        safeDay = Math.max(safeDay, 1);
+
+        return Date.newInstance(yearInt, monthNum, safeDay);
     }
 
     /**
@@ -286,7 +321,8 @@ public with sharing class AccountBackfillService {
                     Policy_Number__c = data.policyNumber,
                     Policy_Type__c = data.policyType,
                     Vehicle_Category__c = data.vehicleCategory,
-                    Fraud_Flag__c = data.fraudFlag
+                    Fraud_Flag__c = data.fraudFlag,
+                    Claim_Date__c = data.claimDate
                 ));
             }
         }

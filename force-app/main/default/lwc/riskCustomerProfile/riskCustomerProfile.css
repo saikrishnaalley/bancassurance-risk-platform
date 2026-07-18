@@ -1,0 +1,17 @@
+.household-label {
+    font-size: 0.8125rem;
+    color: #706e6b;
+    font-weight: 400;
+}
+
+.record-tile {
+    border: 1px solid #dddbda;
+    border-radius: 0.25rem;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.fraud-badge {
+    --slds-c-badge-color-background: #fdeeee;
+    --slds-c-badge-text-color: #a61b1b;
+}
