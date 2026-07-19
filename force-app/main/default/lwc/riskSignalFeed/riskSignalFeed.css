@@ -1,0 +1,33 @@
+.status-live {
+    color: #2e844a;
+    font-size: 0.8125rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-connecting {
+    color: #706e6b;
+    font-size: 0.8125rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-error {
+    color: #a61b1b;
+    font-size: 0.8125rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.event-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.event-row {
+    border: 1px solid #dddbda;
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+}

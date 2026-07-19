@@ -1,0 +1,54 @@
+<template>
+    <lightning-card title="Risk Signal Feed (Live)" icon-name="utility:live_message">
+        <span slot="actions" class={statusClass}>
+            <lightning-icon
+                icon-name="utility:record"
+                size="xx-small"
+                class="slds-m-right_xx-small"
+            ></lightning-icon>
+            {statusLabel}
+        </span>
+
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <p class="slds-text-body_small slds-text-color_weak slds-p-bottom_small">
+                Verifies Change Data Capture is actually delivering events for Risk_Case__c, in real time, via lightning/empApi
+            </p>
+
+            <template if:true={connectionError}>
+                <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
+                    <span>{connectionError}</span>
+                </div>
+            </template>
+
+            <template if:false={hasEvents}>
+                <div class="slds-illustration slds-illustration_small slds-text-align_center slds-p-vertical_large">
+                    <p class="slds-text-heading_small slds-text-color_weak">Waiting for a change...</p>
+                    <p class="slds-text-body_small slds-text-color_weak">
+                        Create or update a Risk_Case__c record (e.g. resolve a case in the queue) to see a live event appear here.
+                    </p>
+                </div>
+            </template>
+
+            <template if:true={hasEvents}>
+                <ul class="event-list">
+                    <template for:each={events} for:item="evt">
+                        <li key={evt.key} class="event-row">
+                            <div class="slds-grid slds-grid_align-spread">
+                                <lightning-badge label={evt.changeType}></lightning-badge>
+                                <lightning-formatted-date-time
+                                    value={evt.receivedAt}
+                                    hour="2-digit"
+                                    minute="2-digit"
+                                    second="2-digit"
+                                ></lightning-formatted-date-time>
+                            </div>
+                            <p class="slds-text-body_small slds-p-top_xx-small">
+                                {evt.entityName} &middot; {evt.recordIds}
+                            </p>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+        </div>
+    </lightning-card>
+</template>
