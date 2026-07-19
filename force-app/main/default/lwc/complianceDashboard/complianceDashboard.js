@@ -1,19 +1,55 @@
-import { LightningElement, wire } from 'lwc';
-import getDashboardData from '@salesforce/apex/ComplianceDashboardController.getDashboardData';
+import { LightningElement } from 'lwc';
+import getDashboardDataForRange from '@salesforce/apex/ComplianceDashboardController.getDashboardDataForRange';
 
 export default class ComplianceDashboard extends LightningElement {
     dashboardData;
     isLoading = true;
     error;
+    startDate;
+    endDate;
 
-    @wire(getDashboardData)
-    wiredData({ data, error }) {
-        this.isLoading = false;
-        if (data) {
-            this.dashboardData = data;
-        } else if (error) {
+    connectedCallback() {
+        this.loadData();
+    }
+
+    async loadData() {
+        this.isLoading = true;
+        try {
+            this.dashboardData = await getDashboardDataForRange({
+                startDate: this.startDate || null,
+                endDate: this.endDate || null
+            });
+            this.error = null;
+        } catch (error) {
             this.error = this.reduceError(error);
+        } finally {
+            this.isLoading = false;
         }
+    }
+
+    handleStartDateChange(event) {
+        this.startDate = event.target.value;
+    }
+
+    handleEndDateChange(event) {
+        this.endDate = event.target.value;
+    }
+
+    handleApplyFilter() {
+        this.loadData();
+    }
+
+    handleClearFilter() {
+        this.startDate = null;
+        this.endDate = null;
+        this.template.querySelectorAll('lightning-input').forEach((input) => {
+            input.value = null;
+        });
+        this.loadData();
+    }
+
+    get isFiltered() {
+        return !!(this.startDate || this.endDate);
     }
 
     get hasData() {

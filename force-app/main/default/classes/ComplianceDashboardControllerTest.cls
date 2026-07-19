@@ -120,4 +120,102 @@ private class ComplianceDashboardControllerTest {
         }
         System.assertEquals(200, sum, 'Status breakdown counts must sum to the total case count');
     }
+
+    @isTest
+    static void testGetDashboardDataForRange_BothBounds_FiltersCorrectly() {
+        insert new Risk_Case__c(Customer_Key__c = 'TOO-EARLY', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 1, 1, 12, 0, 0));
+        insert new Risk_Case__c(Customer_Key__c = 'IN-RANGE', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 3, 15, 12, 0, 0));
+        insert new Risk_Case__c(Customer_Key__c = 'TOO-LATE', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 6, 1, 12, 0, 0));
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            ComplianceDashboardController.DashboardData data = ComplianceDashboardController.getDashboardDataForRange(
+                Date.newInstance(2026, 2, 1), Date.newInstance(2026, 4, 1)
+            );
+            Test.stopTest();
+
+            System.assertEquals(1, data.totalCases);
+            System.assertEquals('IN-RANGE', data.auditTrail[0].customerKey);
+        }
+    }
+
+    @isTest
+    static void testGetDashboardDataForRange_OnlyStartDate_FiltersFromThatPointForward() {
+        insert new Risk_Case__c(Customer_Key__c = 'BEFORE', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 1, 1, 12, 0, 0));
+        insert new Risk_Case__c(Customer_Key__c = 'AFTER', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 6, 1, 12, 0, 0));
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            ComplianceDashboardController.DashboardData data = ComplianceDashboardController.getDashboardDataForRange(
+                Date.newInstance(2026, 3, 1), null
+            );
+            Test.stopTest();
+
+            System.assertEquals(1, data.totalCases);
+            System.assertEquals('AFTER', data.auditTrail[0].customerKey);
+        }
+    }
+
+    @isTest
+    static void testGetDashboardDataForRange_OnlyEndDate_FiltersUpToThatPoint() {
+        insert new Risk_Case__c(Customer_Key__c = 'BEFORE', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 1, 1, 12, 0, 0));
+        insert new Risk_Case__c(Customer_Key__c = 'AFTER', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 6, 1, 12, 0, 0));
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            ComplianceDashboardController.DashboardData data = ComplianceDashboardController.getDashboardDataForRange(
+                null, Date.newInstance(2026, 3, 1)
+            );
+            Test.stopTest();
+
+            System.assertEquals(1, data.totalCases);
+            System.assertEquals('BEFORE', data.auditTrail[0].customerKey);
+        }
+    }
+
+    @isTest
+    static void testGetDashboardDataForRange_NoBounds_ReturnsEverything() {
+        insert new Risk_Case__c(Customer_Key__c = 'C1', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 1, 1, 12, 0, 0));
+        insert new Risk_Case__c(Customer_Key__c = 'C2', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 6, 1, 12, 0, 0));
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            ComplianceDashboardController.DashboardData data = ComplianceDashboardController.getDashboardDataForRange(null, null);
+            Test.stopTest();
+
+            System.assertEquals(2, data.totalCases, 'No bounds should behave the same as the unfiltered getDashboardData');
+        }
+    }
+
+    @isTest
+    static void testGetDashboardDataForRange_BoundaryDatesAreInclusive() {
+        insert new Risk_Case__c(Customer_Key__c = 'ON-START', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 3, 1, 0, 0, 1));
+        insert new Risk_Case__c(Customer_Key__c = 'ON-END', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 3, 31, 23, 59, 0));
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            ComplianceDashboardController.DashboardData data = ComplianceDashboardController.getDashboardDataForRange(
+                Date.newInstance(2026, 3, 1), Date.newInstance(2026, 3, 31)
+            );
+            Test.stopTest();
+
+            System.assertEquals(2, data.totalCases, 'Records falling exactly on the start or end date should be included');
+        }
+    }
+
+    @isTest
+    static void testGetDashboardDataForRange_RangeExcludesEverything_ReturnsEmpty() {
+        insert new Risk_Case__c(Customer_Key__c = 'C1', Status__c = 'New', Risk_Score__c = 1, Flagged_Date__c = Datetime.newInstance(2026, 1, 1, 12, 0, 0));
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            ComplianceDashboardController.DashboardData data = ComplianceDashboardController.getDashboardDataForRange(
+                Date.newInstance(2027, 1, 1), Date.newInstance(2027, 12, 31)
+            );
+            Test.stopTest();
+
+            System.assertEquals(0, data.totalCases);
+            System.assertEquals(0, data.statusBreakdown.size());
+        }
+    }
 }

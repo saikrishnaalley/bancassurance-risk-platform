@@ -1,0 +1,40 @@
+.case-count {
+    font-size: 0.8125rem;
+    color: #706e6b;
+    font-weight: 400;
+}
+
+.risk-table {
+    table-layout: fixed;
+}
+
+.reason-cell {
+    max-width: 260px;
+}
+
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
+.severity-low {
+    background-color: #eef4ff;
+    color: #014486;
+}
+
+.severity-medium {
+    background-color: #fff3e0;
+    color: #8a4b00;
+}
+
+.severity-high {
+    background-color: #fdeeee;
+    color: #a61b1b;
+}

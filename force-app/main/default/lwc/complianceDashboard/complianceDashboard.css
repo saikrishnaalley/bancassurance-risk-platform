@@ -4,6 +4,16 @@
     font-weight: 400;
 }
 
+.filter-row {
+    align-items: flex-end;
+}
+
+.filter-buttons {
+    display: flex;
+    align-items: center;
+    padding-bottom: 0.1rem;
+}
+
 .status-row {
     margin-bottom: 0.75rem;
 }

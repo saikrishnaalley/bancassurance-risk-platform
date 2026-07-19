@@ -1,0 +1,75 @@
+<template>
+    <lightning-card title="Flagged Risk Cases" icon-name="utility:priority">
+        <span slot="actions" class="case-count">{caseCountLabel}</span>
+
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading risk cases" size="small"></lightning-spinner>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={hasCases}>
+                    <table class="slds-table slds-table_bordered slds-table_cell-buffer risk-table">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col"><div class="slds-truncate">Score</div></th>
+                                <th scope="col"><div class="slds-truncate">Customer</div></th>
+                                <th scope="col"><div class="slds-truncate">Status</div></th>
+                                <th scope="col"><div class="slds-truncate">Reason</div></th>
+                                <th scope="col"><div class="slds-truncate">Flagged</div></th>
+                                <th scope="col"><div class="slds-truncate">Resolve</div></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={cases} for:item="riskCase">
+                                <tr key={riskCase.id} class="slds-hint-parent">
+                                    <td>
+                                        <span class={riskCase.severityClass}>{riskCase.riskScore}</span>
+                                    </td>
+                                    <td>
+                                        <div class="slds-truncate" title={riskCase.displayName}>{riskCase.displayName}</div>
+                                    </td>
+                                    <td>
+                                        <lightning-badge label={riskCase.status}></lightning-badge>
+                                    </td>
+                                    <td class="reason-cell">
+                                        <div class="slds-truncate" title={riskCase.riskReasonSummary}>{riskCase.riskReasonSummary}</div>
+                                    </td>
+                                    <td>
+                                        <lightning-formatted-date-time
+                                            value={riskCase.flaggedDateDisplay}
+                                            year="numeric"
+                                            month="short"
+                                            day="2-digit"
+                                            hour="2-digit"
+                                            minute="2-digit"
+                                        ></lightning-formatted-date-time>
+                                    </td>
+                                    <td>
+                                        <lightning-combobox
+                                            data-id={riskCase.id}
+                                            variant="label-hidden"
+                                            label="Resolve"
+                                            placeholder="Change status"
+                                            options={resolveOptions}
+                                            onchange={handleResolve}
+                                        ></lightning-combobox>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+
+                <template if:false={hasCases}>
+                    <div class="slds-illustration slds-illustration_small slds-text-align_center slds-p-vertical_large">
+                        <p class="slds-text-heading_small slds-text-color_weak">No open cases</p>
+                        <p class="slds-text-body_small slds-text-color_weak">
+                            Every flagged customer has been resolved. New cases will appear here automatically.
+                        </p>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

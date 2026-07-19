@@ -3,6 +3,40 @@
         <span slot="actions" class="total-label">{totalCases} total cases</span>
 
         <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <div class="slds-grid slds-gutters slds-wrap filter-row slds-p-bottom_medium">
+                <div class="slds-col slds-size_1-of-3 slds-small-size_1-of-1">
+                    <lightning-input
+                        type="date"
+                        label="From"
+                        value={startDate}
+                        onchange={handleStartDateChange}
+                    ></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-3 slds-small-size_1-of-1">
+                    <lightning-input
+                        type="date"
+                        label="To"
+                        value={endDate}
+                        onchange={handleEndDateChange}
+                    ></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-3 slds-small-size_1-of-1 filter-buttons">
+                    <lightning-button
+                        label="Apply Filter"
+                        variant="brand"
+                        onclick={handleApplyFilter}
+                    ></lightning-button>
+                    <template if:true={isFiltered}>
+                        <lightning-button
+                            label="Clear"
+                            variant="neutral"
+                            onclick={handleClearFilter}
+                            class="slds-m-left_x-small"
+                        ></lightning-button>
+                    </template>
+                </div>
+            </div>
+
             <template if:true={isLoading}>
                 <lightning-spinner alternative-text="Loading dashboard" size="small"></lightning-spinner>
             </template>
@@ -10,7 +44,7 @@
             <template if:false={isLoading}>
                 <template if:false={hasData}>
                     <div class="slds-illustration slds-illustration_small slds-text-align_center slds-p-vertical_large">
-                        <p class="slds-text-heading_small slds-text-color_weak">No risk cases yet</p>
+                        <p class="slds-text-heading_small slds-text-color_weak">No risk cases in this range</p>
                     </div>
                 </template>
 

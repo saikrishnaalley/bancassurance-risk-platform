@@ -188,7 +188,7 @@ public with sharing class AccountBackfillService {
         ]) {
             if (!claimByRawKey.containsKey(claim.Customer_Key__c)) {
                 ClaimData data = new ClaimData();
-                data.policyNumber = claim.Policy_Number__c != null ? String.valueOf(claim.Policy_Number__c) : null;
+                data.policyNumber = claim.Policy_Number__c != null ? String.valueOf(claim.Policy_Number__c.longValue()) : null;
                 // Policy_Type__c is a coarse Auto/Home/Life picklist; this dataset is entirely
                 // vehicle insurance, so 'Auto' is the honest mapping (see class doc for detail).
                 data.policyType = 'Auto';
