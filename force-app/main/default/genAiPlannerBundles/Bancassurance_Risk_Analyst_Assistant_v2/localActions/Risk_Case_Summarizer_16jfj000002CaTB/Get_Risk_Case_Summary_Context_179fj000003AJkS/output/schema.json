@@ -1,0 +1,102 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "accountBalance" : {
+      "title" : "Banking Account Balance",
+      "description" : "The customer's checking account balance.",
+      "lightning:type" : "lightning__numberType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "accountType" : {
+      "title" : "Banking Account Type",
+      "description" : "The type of banking account (e.g. Checking).",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "claimDate" : {
+      "title" : "Insurance Claim Date",
+      "description" : "The date the insurance claim was filed.",
+      "lightning:type" : "lightning__dateType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "customerKey" : {
+      "title" : "Customer Key",
+      "description" : "The customer's unique identifier.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "existingReasonSummary" : {
+      "title" : "Existing Reason Summary",
+      "description" : "The system-generated reason this case was originally flagged.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "found" : {
+      "title" : "Found",
+      "description" : "Whether a matching risk case was found.",
+      "lightning:type" : "lightning__booleanType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "householdName" : {
+      "title" : "Household Name",
+      "description" : "The name of the customer's household record.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "insuranceFraudFlag" : {
+      "title" : "Insurance Fraud Flag",
+      "description" : "Whether the linked insurance claim was itself flagged as fraudulent.",
+      "lightning:type" : "lightning__booleanType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "policyType" : {
+      "title" : "Insurance Policy Type",
+      "description" : "The type of insurance policy (e.g. Auto).",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "riskScore" : {
+      "title" : "Composite Risk Score",
+      "description" : "The customer's composite risk score (0-5) from the Calculated Insight.",
+      "lightning:type" : "lightning__numberType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "status" : {
+      "title" : "Current Status",
+      "description" : "The Risk Case's current status (e.g. New, Under Investigation).",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "vehicleCategory" : {
+      "title" : "Insurance Vehicle Category",
+      "description" : "The vehicle category on the insurance policy (e.g. Sedan).",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

@@ -1,0 +1,21 @@
+{
+  "required" : [ ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "customerKey" : {
+      "title" : "Customer Key",
+      "description" : "The customer's unique identifier (e.g. CUST-001168), if the analyst refers to a customer rather than a specific case.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "riskCaseId" : {
+      "title" : "Risk Case Id",
+      "description" : "The Id of the Risk_Case__c record to summarize, if known.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

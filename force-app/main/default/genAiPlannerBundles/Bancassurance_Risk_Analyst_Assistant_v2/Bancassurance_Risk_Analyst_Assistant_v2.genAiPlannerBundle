@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPlannerBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Automate common business tasks and assist users in their flow of work. Agentforce Employee Agent can search knowledge articles and other data sources. Customize it further to meet your employees&apos; business needs.</description>
+    <localTopicLinks>
+        <genAiPluginName>GeneralFAQ_16jfj000002CaTB</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>Risk_Case_Summarizer_16jfj000002CaTB</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>agent_router_16jfj000002CaTB</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>ambiguous_question_16jfj000002CaTB</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>off_topic_16jfj000002CaTB</genAiPluginName>
+    </localTopicLinks>
+    <localTopics>
+        <fullName>ambiguous_question_16jfj000002CaTB</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Redirect conversation to relevant topics when user request is too ambiguous</description>
+        <developerName>ambiguous_question_16jfj000002CaTB</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.
+
+The user&apos;s current context is:
+Current App Name: {{state.currentAppName}}
+Current Object Name: {{state.currentObjectApiName}}
+Current Page Type: {{state.currentPageType}}
+Current Record ID: {{state.currentRecordId}}</description>
+            <developerName>instruction0_179fj000003AJkT</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179fj000003AJkT</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>ambiguous_question</localDeveloperName>
+        <masterLabel>Ambiguous Question</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>Risk_Case_Summarizer_16jfj000002CaTB</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Explains why a specific Risk_Case__c was flagged, using real banking and insurance data. Use this when a fraud analyst asks why a case was flagged, what triggered it, or wants a summary of a risk case.</description>
+        <developerName>Risk_Case_Summarizer_16jfj000002CaTB</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.
+
+The user&apos;s current context is:
+Current App Name: {{state.currentAppName}}
+Current Object Name: {{state.currentObjectApiName}}
+Current Page Type: {{state.currentPageType}}
+Current Record ID: {{state.currentRecordId}}</description>
+            <developerName>instruction0_179fj000003AJkS</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179fj000003AJkS</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>Query_Open_Risk_Cases_179fj000003AJkS</functionName>
+        </localActionLinks>
+        <localActionLinks>
+            <functionName>Get_Risk_Case_Summary_Context_179fj000003AJkS</functionName>
+        </localActionLinks>
+        <localActionLinks>
+            <functionName>Resolve_Risk_Case_179fj000003AJkS</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>Get_Risk_Case_Summary_Context_179fj000003AJkS</fullName>
+            <description>Retrieves real Risk_Case__c, banking account, and insurance policy data for a specific case, so the agent can explain why it was flagged using actual facts instead of guessing.</description>
+            <developerName>Get_Risk_Case_Summary_Context_179fj000003AJkS</developerName>
+            <invocationTarget>RiskCaseSummaryAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>Get_Risk_Case_Summary_Context</localDeveloperName>
+            <masterLabel>Get Risk Case Summary Context</masterLabel>
+        </localActions>
+        <localActions>
+            <fullName>Query_Open_Risk_Cases_179fj000003AJkS</fullName>
+            <description>Returns real open Risk_Case__c records, highest risk first, to answer queue-style questions like &quot;what cases need my attention&quot; or &quot;show me the highest risk cases.&quot; Supports an optional minimum score filter and result limit.</description>
+            <developerName>Query_Open_Risk_Cases_179fj000003AJkS</developerName>
+            <invocationTarget>RiskCaseQueryAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>Query_Open_Risk_Cases</localDeveloperName>
+            <masterLabel>Query Open Risk Cases</masterLabel>
+        </localActions>
+        <localActions>
+            <fullName>Resolve_Risk_Case_179fj000003AJkS</fullName>
+            <description>Updates a Risk_Case__c&apos;s status to New, Under Investigation, Needs More Info, Confirmed Fraud, or False Positive, looked up by Risk Case Id or Customer Key. This changes real data — always confirm the case and exact status with the analyst before calling.</description>
+            <developerName>Resolve_Risk_Case_179fj000003AJkS</developerName>
+            <invocationTarget>RiskCaseResolutionAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>true</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>Resolve_Risk_Case</localDeveloperName>
+            <masterLabel>Resolve Risk Case</masterLabel>
+        </localActions>
+        <localDeveloperName>Risk_Case_Summarizer</localDeveloperName>
+        <masterLabel>Risk Case Summarizer</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>off_topic_16jfj000002CaTB</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Redirect conversation to relevant topics when user request goes off-topic</description>
+        <developerName>off_topic_16jfj000002CaTB</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.
+
+The user&apos;s current context is:
+Current App Name: {{state.currentAppName}}
+Current Object Name: {{state.currentObjectApiName}}
+Current Page Type: {{state.currentPageType}}
+Current Record ID: {{state.currentRecordId}}</description>
+            <developerName>instruction0_179fj000003AJkR</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179fj000003AJkR</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>off_topic</localDeveloperName>
+        <masterLabel>Off Topic</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>agent_router_16jfj000002CaTB</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Welcome the user and determine the appropriate subagent based on user input</description>
+        <developerName>agent_router_16jfj000002CaTB</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.
+
+The user&apos;s current context is:
+Current App Name: {!@variables.currentAppName}
+Current Object Name: {!@variables.currentObjectApiName}
+Current Page Type: {!@variables.currentPageType}
+Current Record ID: {!@variables.currentRecordId}
+
+{{state.AgentScriptInternal_agent_instructions}}</description>
+            <developerName>instruction0_179fj000003AJkQ</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179fj000003AJkQ</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>agent_router</localDeveloperName>
+        <masterLabel>Agent Router</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>GeneralFAQ_16jfj000002CaTB</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Answers customer questions about company products, specifications, policies, or business procedures by searching knowledge articles or other data sources.</description>
+        <developerName>GeneralFAQ_16jfj000002CaTB</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.
+
+The user&apos;s current context is:
+Current App Name: {{state.currentAppName}}
+Current Object Name: {{state.currentObjectApiName}}
+Current Page Type: {{state.currentPageType}}
+Current Record ID: {{state.currentRecordId}}</description>
+            <developerName>instruction0_179fj000003AJkP</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179fj000003AJkP</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>AnswerQuestionsWithKnowledge_179fj000003AJkP</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>AnswerQuestionsWithKnowledge_179fj000003AJkP</fullName>
+            <description>Answers questions about company policies and procedures, troubleshooting steps, or product information. For example: &apos;What is your return policy?&apos; &apos;How do I fix an issue?&apos; or &apos;What features does a product have?&apos;</description>
+            <developerName>AnswerQuestionsWithKnowledge_179fj000003AJkP</developerName>
+            <invocationTarget>streamKnowledgeSearch</invocationTarget>
+            <invocationTargetType>standardInvocableAction</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>true</isIncludeInProgressIndicator>
+            <localDeveloperName>AnswerQuestionsWithKnowledge</localDeveloperName>
+            <masterLabel>Answer Questions with Knowledge</masterLabel>
+            <progressIndicatorMessage>Getting answers</progressIndicatorMessage>
+            <source>EmployeeCopilot__AnswerQuestionsWithKnowledge</source>
+        </localActions>
+        <localDeveloperName>GeneralFAQ</localDeveloperName>
+        <masterLabel>General FAQ</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <masterLabel>Bancassurance Risk Analyst Assistant</masterLabel>
+    <plannerType>Atlas__ConcurrentMultiAgentOrchestration</plannerType>
+</GenAiPlannerBundle>

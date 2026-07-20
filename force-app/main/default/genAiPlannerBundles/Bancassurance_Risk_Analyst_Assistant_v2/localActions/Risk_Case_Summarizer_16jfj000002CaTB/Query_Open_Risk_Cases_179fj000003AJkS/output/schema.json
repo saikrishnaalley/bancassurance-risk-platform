@@ -1,0 +1,30 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "caseSummaryText" : {
+      "title" : "Case Summary Text",
+      "description" : "A formatted, numbered list of the matching open risk cases, each with customer, score, and status.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "returnedCaseCount" : {
+      "title" : "Returned Case Count",
+      "description" : "How many cases are included in the Case Summary Text.",
+      "lightning:type" : "lightning__integerType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "totalOpenCases" : {
+      "title" : "Total Open Cases",
+      "description" : "The total count of open cases matching the filter, which may be higher than Returned Case Count if capped.",
+      "lightning:type" : "lightning__integerType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

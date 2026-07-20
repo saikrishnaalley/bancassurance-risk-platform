@@ -1,0 +1,21 @@
+{
+  "required" : [ ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "maxResults" : {
+      "title" : "Maximum Results",
+      "description" : "How many cases to return, default 5, capped at 50.",
+      "lightning:type" : "lightning__integerType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "minRiskScore" : {
+      "title" : "Minimum Risk Score",
+      "description" : "Only return cases with a risk score at or above this value, if specified.",
+      "lightning:type" : "lightning__numberType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

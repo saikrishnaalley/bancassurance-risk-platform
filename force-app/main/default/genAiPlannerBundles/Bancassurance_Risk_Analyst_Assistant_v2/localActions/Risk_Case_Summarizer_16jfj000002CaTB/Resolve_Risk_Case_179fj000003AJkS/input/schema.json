@@ -1,0 +1,28 @@
+{
+  "required" : [ "newStatus" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "customerKey" : {
+      "title" : "Customer Key",
+      "description" : "The customer's unique identifier (e.g. CUST-000782), if resolving by customer rather than a specific case Id.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "newStatus" : {
+      "title" : "New Status",
+      "description" : "The new status to set: New, Under Investigation, Needs More Info, Confirmed Fraud, or False Positive.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "riskCaseId" : {
+      "title" : "Risk Case Id",
+      "description" : "The Id of the specific Risk_Case__c record to resolve, if known.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}
