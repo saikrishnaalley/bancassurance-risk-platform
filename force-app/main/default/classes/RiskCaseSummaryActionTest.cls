@@ -157,6 +157,23 @@ private class RiskCaseSummaryActionTest {
     }
 
     @isTest
+    static void testGetSummaryContext_MalformedIdString_SkippedSafelyWithoutError() {
+        RiskCaseSummaryAction.RiskCaseSummaryRequest req = new RiskCaseSummaryAction.RiskCaseSummaryRequest();
+        req.riskCaseId = 'not-a-real-id';
+
+        System.runAs(getRunAsUser()) {
+            Test.startTest();
+            List<RiskCaseSummaryAction.RiskCaseSummaryContext> results = RiskCaseSummaryAction.getSummaryContext(
+                new List<RiskCaseSummaryAction.RiskCaseSummaryRequest>{ req }
+            );
+            Test.stopTest();
+
+            System.assertEquals(1, results.size(), 'A malformed Id string should still produce a blank result, not throw');
+            System.assertEquals(null, results[0].customerKey);
+        }
+    }
+
+    @isTest
     static void testGetSummaryContext_BulkAtFiftyRequests() {
         List<Household__c> households = new List<Household__c>();
         for (Integer i = 0; i < 50; i++) {

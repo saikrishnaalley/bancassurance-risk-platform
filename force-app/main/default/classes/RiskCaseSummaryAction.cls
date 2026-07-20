@@ -12,7 +12,7 @@ public with sharing class RiskCaseSummaryAction {
 
     public class RiskCaseSummaryRequest {
         @InvocableVariable(required=true label='Risk Case Id')
-        public Id riskCaseId;
+        public String riskCaseId;
     }
 
     public class RiskCaseSummaryContext {
@@ -69,9 +69,16 @@ public with sharing class RiskCaseSummaryAction {
         }
 
         Set<Id> riskCaseIds = new Set<Id>();
+        Map<String, Id> validIdByRequestString = new Map<String, Id>();
         for (RiskCaseSummaryRequest req : requests) {
-            if (req.riskCaseId != null) {
-                riskCaseIds.add(req.riskCaseId);
+            if (String.isNotBlank(req.riskCaseId)) {
+                try {
+                    Id validId = Id.valueOf(req.riskCaseId);
+                    riskCaseIds.add(validId);
+                    validIdByRequestString.put(req.riskCaseId, validId);
+                } catch (System.StringException e) {
+                    System.debug(LoggingLevel.WARN, 'RiskCaseSummaryAction: not a valid Id, skipping: ' + req.riskCaseId);
+                }
             }
         }
 
@@ -126,7 +133,8 @@ public with sharing class RiskCaseSummaryAction {
 
         for (RiskCaseSummaryRequest req : requests) {
             RiskCaseSummaryContext context = new RiskCaseSummaryContext();
-            Risk_Case__c rc = req.riskCaseId != null ? caseById.get(req.riskCaseId) : null;
+            Id validId = String.isNotBlank(req.riskCaseId) ? validIdByRequestString.get(req.riskCaseId) : null;
+            Risk_Case__c rc = validId != null ? caseById.get(validId) : null;
 
             if (rc != null) {
                 context.customerKey = rc.Customer_Key__c;
