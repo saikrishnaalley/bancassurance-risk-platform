@@ -12,6 +12,10 @@ package.xml
 **/mktCalcInsightObjectDefs/**
 **/flows/Bancassurance_Risk_Case_Automation.flow-meta.xml
 
+**/aiAuthoringBundles/**
+**/bots/**
+**/genAiPlannerBundles/**
+
 
 # LWC Jest
 **/__tests__/**
