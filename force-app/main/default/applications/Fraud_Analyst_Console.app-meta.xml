@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand>
+        <headerColor>#DA0101</headerColor>
+        <shouldOverrideOrgTheme>false</shouldOverrideOrgTheme>
+    </brand>
+    <description>Console for fraud/risk analysts to review and resolve flagged risk cases.</description>
+    <formFactors>Small</formFactors>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
+    <label>Fraud Analyst Console</label>
+    <navType>Standard</navType>
+    <tabs>Household__c</tabs>
+    <tabs>Risk_Case_Queue</tabs>
+    <tabs>Risk_Signal_Feed</tabs>
+    <uiType>Lightning</uiType>
+    <utilityBar>Fraud_Analyst_Console_UtilityBar</utilityBar>
+</CustomApplication>
