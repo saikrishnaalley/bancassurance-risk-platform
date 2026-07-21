@@ -3,6 +3,15 @@
  * queue-style questions in natural language ("what cases need my attention",
  * "show me the highest risk cases") instead of only summarizing one case at a time.
  * Read-only -- no confirmation needed in Agent Builder.
+ *
+ * Output is deliberately flattened to plain primitives (a single formatted text summary,
+ * not a nested List<CustomClass>). An earlier version returned a List<RiskCaseSummary>
+ * (a "list of object" output) which caused the entire action's schema to fail to
+ * register in Agent Builder -- even the org's own built-in AnswerQuestionsWithKnowledge
+ * action showed the same class of error, suggesting this Agentforce release doesn't
+ * reliably handle nested list-of-object Invocable outputs. Flattening to primitives
+ * avoids the issue entirely and matches the pattern already proven working elsewhere
+ * in this project (RiskCaseSummaryAction, RiskCaseResolutionAction).
  */
 public with sharing class RiskCaseQueryAction {
 
@@ -16,46 +25,29 @@ public with sharing class RiskCaseQueryAction {
         public Decimal minRiskScore;
     }
 
-    /** Flattened, agent-friendly view of one open Risk_Case__c. */
-    public class RiskCaseSummary {
-        @InvocableVariable(label='Risk Case Id')
-        public String riskCaseId;
-
-        @InvocableVariable(label='Customer Key')
-        public String customerKey;
-
-        @InvocableVariable(label='Household Name')
-        public String householdName;
-
-        @InvocableVariable(label='Risk Score')
-        public Decimal riskScore;
-
-        @InvocableVariable(label='Status')
-        public String status;
-
-        @InvocableVariable(label='Reason Summary')
-        public String reasonSummary;
-    }
-
     public class RiskCaseQueryResult {
         @InvocableVariable(label='Total Open Cases')
-        public Integer totalOpenCases;
+        public Integer totalOpenCases = 0;
 
-        @InvocableVariable(label='Cases')
-        public List<RiskCaseSummary> cases = new List<RiskCaseSummary>();
+        @InvocableVariable(label='Returned Case Count')
+        public Integer returnedCaseCount = 0;
+
+        @InvocableVariable(label='Case Summary Text')
+        public String caseSummaryText;
     }
 
     /**
      * Returns open Risk_Case__c records, highest risk first, optionally capped and/or
-     * filtered to a minimum score. Mirrors the same open-case definition and ordering
-     * used by RiskCaseQueueController's LWC-facing queue, so the agent's answer matches
-     * what an analyst would see in the Risk Case Queue.
+     * filtered to a minimum score, as a single formatted text summary. Mirrors the same
+     * open-case definition and ordering used by RiskCaseQueueController's LWC-facing
+     * queue, so the agent's answer matches what an analyst would see in the Risk Case Queue.
      * @param requests One request; only the first is used (single-query action)
-     * @return Total open case count and up to maxResults (default 5) matching cases
+     * @return Total open case count, returned count, and a formatted text summary of up
+     *         to maxResults (default 5, capped at 50) matching cases
      */
     @InvocableMethod(
         label='Query Open Risk Cases'
-        description='Answers queue-style questions like "what cases need my attention" or "show me the highest risk cases" by returning real open Risk_Case__c records, highest risk first.'
+        description='Answers queue-style questions like "what cases need my attention" or "show me the highest risk cases" by returning a text summary of real open Risk_Case__c records, highest risk first.'
         category='Risk'
     )
     public static List<RiskCaseQueryResult> queryOpenCases(List<RiskCaseQueryRequest> requests) {
@@ -95,30 +87,38 @@ public with sharing class RiskCaseQueryAction {
     }
 
     /**
-     * TESTABLE: pure logic, builds the result payload from already-fetched records.
+     * TESTABLE: pure logic, builds the flattened result payload (including the formatted
+     * text summary) from already-fetched records.
      * @param matches Risk_Case__c records already queried
      * @param totalOpenCases Total count of open cases matching the filter (may exceed matches.size() if capped)
-     * @return RiskCaseQueryResult with the flattened case list and total count
+     * @return RiskCaseQueryResult with the formatted summary text and counts
      */
     @TestVisible
     static RiskCaseQueryResult buildResult(List<Risk_Case__c> matches, Integer totalOpenCases) {
         RiskCaseQueryResult result = new RiskCaseQueryResult();
         result.totalOpenCases = totalOpenCases;
 
-        if (matches == null) {
+        if (matches == null || matches.isEmpty()) {
+            result.returnedCaseCount = 0;
+            result.caseSummaryText = 'No open risk cases match the given criteria.';
             return result;
         }
 
+        result.returnedCaseCount = matches.size();
+
+        List<String> lines = new List<String>();
+        Integer i = 1;
         for (Risk_Case__c rc : matches) {
-            RiskCaseSummary summary = new RiskCaseSummary();
-            summary.riskCaseId = rc.Id;
-            summary.customerKey = rc.Customer_Key__c;
-            summary.householdName = rc.Household__r != null ? rc.Household__r.Name : null;
-            summary.riskScore = rc.Risk_Score__c;
-            summary.status = rc.Status__c;
-            summary.reasonSummary = rc.Risk_Reason_Summary__c;
-            result.cases.add(summary);
+            String household = rc.Household__r != null ? rc.Household__r.Name : rc.Customer_Key__c;
+            lines.add(
+                i + '. ' + household
+                + ' -- Score: ' + (rc.Risk_Score__c != null ? String.valueOf(rc.Risk_Score__c) : 'N/A')
+                + ', Status: ' + rc.Status__c
+                + ', Customer Key: ' + rc.Customer_Key__c
+            );
+            i++;
         }
+        result.caseSummaryText = String.join(lines, '\n');
 
         return result;
     }
