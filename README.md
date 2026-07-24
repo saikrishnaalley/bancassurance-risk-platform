@@ -275,6 +275,16 @@ The moment a real `UPDATE` event lands, proving Change Data Capture delivery end
 
 </td>
 </tr>
+<tr>
+<td width="50%" colspan="2">
+
+**Copado CI/CD — Successful Deployment**
+A second, independent CI/CD pipeline (alongside GitHub Actions), triggered automatically via a Git webhook and deploying successfully.
+
+![Copado Deployment](screenshots/Copado.png)
+
+</td>
+</tr>
 </table>
 
 ---
