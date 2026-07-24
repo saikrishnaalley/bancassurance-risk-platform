@@ -220,6 +220,16 @@ A read-only persona (Compliance Officer) is better served by a **`Salesforce Pla
 
 <table>
 <tr>
+<td width="50%" colspan="2">
+
+**Identity Resolution — 16,410 Unified Profiles**
+Real Identity Resolution output: 16,410 unified customer profiles matched from 22,920 source records across banking and insurance — the foundation everything downstream is built on.
+
+![Identity Resolution Match Results](screenshots/identity-resolution-match.png)
+
+</td>
+</tr>
+<tr>
 <td width="50%">
 
 **Risk Case Queue**
@@ -266,9 +276,6 @@ The moment a real `UPDATE` event lands, proving Change Data Capture delivery end
 </td>
 </tr>
 </table>
-
-> [!NOTE]
-> To add your own screenshots: create a `screenshots/` folder at the repo root, drop your image files in with the filenames referenced above, then commit and push. GitHub will render them inline automatically.
 
 ---
 
