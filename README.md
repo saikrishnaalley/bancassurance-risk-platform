@@ -26,6 +26,7 @@ Unifying banking and insurance data for a single customer to surface risk signal
 - [Architecture](#-architecture)
 - [Tech Stack](#-tech-stack)
 - [Real Engineering Stories](#-real-engineering-stories-worth-reading)
+- [Screenshots](#-screenshots)
 - [Getting Started](#-getting-started)
 - [Testing](#-testing)
 - [Adapting This Project to Your Own Dataset](#-adapting-this-project-to-your-own-dataset)
@@ -210,6 +211,64 @@ A read-only persona (Compliance Officer) is better served by a **`Salesforce Pla
 
 > [!TIP]
 > Full technical detail on all of these — including the exact debugging steps, error messages, and code — is in the project's internal Build Guide.
+
+---
+
+---
+
+## 📸 Screenshots
+
+<table>
+<tr>
+<td width="50%">
+
+**Risk Case Queue**
+Prioritized, color-coded severity badges — the automation pipeline's output, ready for an analyst to act on.
+
+![Risk Case Queue](screenshots/risk-case-queue.png)
+
+</td>
+<td width="50%">
+
+**Customer Profile**
+Unified banking + insurance view on a single Risk Case — real account balance, real policy detail, real claim date.
+
+![Customer Profile](screenshots/customer-profile.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Agentforce Agent — Live Answer**
+A real, unedited conversation — every fact grounded in actual data, nothing invented.
+
+![Agentforce Agent](screenshots/agentforce-agent.png)
+
+</td>
+<td width="50%">
+
+**Compliance Dashboard**
+Real status breakdown and audit trail — the reporting layer, working against live data.
+
+![Compliance Dashboard](screenshots/compliance-dashboard.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%" colspan="2">
+
+**Risk Signal Feed — Live CDC Event**
+The moment a real `UPDATE` event lands, proving Change Data Capture delivery end to end, not just configured and assumed.
+
+![Risk Signal Feed](screenshots/risk-signal-feed.png)
+
+</td>
+</tr>
+</table>
+
+> [!NOTE]
+> To add your own screenshots: create a `screenshots/` folder at the repo root, drop your image files in with the filenames referenced above, then commit and push. GitHub will render them inline automatically.
 
 ---
 
